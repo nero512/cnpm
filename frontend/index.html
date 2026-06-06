@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập - Nhóm 14</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f4c81, #1e90ff);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-page {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .login-container {
+      display: flex;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .login-left {
+      flex: 1;
+      padding: 50px 40px;
+      background: #fff;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo img {
+      width: 80px;
+      margin-bottom: 15px;
+    }
+
+    .logo h1 {
+      color: #0f4c81;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 15px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+      font-size: 26px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 14px 14px 14px 45px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus {
+      border-color: #0f4c81;
+      box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.1);
+    }
+
+    .icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #0f4c81;
+      font-size: 18px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #0f4c81;
+      font-size: 18px;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: #0f4c81;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+
+    .btn-login:hover {
+      background: #0d3b66;
+    }
+
+    .login-right {
+      flex: 1;
+      background: linear-gradient(135deg, #0f4c81, #1e90ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: white;
+    }
+
+    .register {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+      gap: 10px;
+    }
+
+    .qr-image {
+      width: 200px;
+      height: 200px;
+      margin-bottom: 20px;
+      border: 8px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+    }
+
+    .qr-text {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 14px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    @media (max-width: 768px) {
+      .login-container {
+        flex-direction: column;
+      }
+
+      .login-right {
+        padding: 30px;
+      }
+
+      .qr-image {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="login-page">
+      <div class="login-container">
+        <!-- Phần trái: Form đăng nhập -->
+        <div class="login-left">
+          <div class="logo">
+            <img src="/logo_vneid.jpg" alt="VNeID Logo" />
+            <h1>NHÓM 14</h1>
+            <p>Trung tâm dữ liệu về dân cư</p>
+          </div>
+
+          <h2>Đăng nhập</h2>
+
+          <form id="loginForm">
+            <div class="input-group">
+              <i class="fas fa-user icon"></i>
+              <input type="text" id="username" placeholder="Tên đăng nhập" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-lock icon"></i>
+              <input type="password" id="password" placeholder="Nhập mật khẩu" required />
+              <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
+            </div>
+
+            <div class="error" id="errorMsg"></div>
+
+            <button type="submit" class="btn-login">Đăng nhập</button>
+          </form>
+          <div class="register">
+            <p>Nếu chưa có tài khoản</p>
+            <a href="" class="register-link">Đăng ký</a>
+          </div>
+        </div>
+
+        <!-- Phần phải: Mã QR -->
+        <div class="login-right">
+          <img src="/qr_code.jpg" alt="QR Code" class="qr-image" />
+          <p class="qr-text">LỚP 162272.</p>
+        </div>
+        <!--chuyển sang trang đăng ký-->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePassword() {
+      const input = document.getElementById("password");
+      const icon = document.querySelector(".toggle-password");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    document
+      .getElementById("loginForm")
+      .addEventListener("submit", function (e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const errorMsg = document.getElementById("errorMsg");
+
+        if (!username || !password) {
+          errorMsg.textContent = "Vui lòng nhập đủ thông tin!";
+          return;
+        }
+
+        // Giả lập đăng nhập
+         /*errorMsg.style.color = "#27ae60";
+        errorMsg.textContent = "Đăng nhập thành công! Đang chuyển hướng...";
+        setTimeout(() => {
+          alert("Chào " + username + " - Quản trị viên!");
+          // window.location.href = "/dashboard";
+        }, 1000);*/
+      }); 
+  </script>
+  <script>
+    function togglePassword() {
+      const input = document.getElementById("password");
+      const icon = document.querySelector(".toggle-password");
+
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const errorMsg = document.getElementById("errorMsg");
+
+      if (!username || !password) {
+        errorMsg.style.color = "#e74c3c";
+        errorMsg.textContent = "Vui lòng nhập đủ thông tin!";
+        return;
+      }
+
+      const api = "http://localhost:3000/api/account/login";
+
+      fetch(api, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json().then(data => ({ status: res.status, body: data })))
+      .then(({ status, body }) => {
+        if (status === 200) {
+          // Đăng nhập thành công
+          errorMsg.style.color = "#27ae60";
+          errorMsg.textContent = "Đăng nhập thành công! Đang chuyển hướng...";
+
+          // Lưu thông tin
+          localStorage.setItem("username", username);
+          localStorage.setItem("role", body.role);
+          localStorage.setItem("person_cccd", body.person_cccd);
+
+          setTimeout(() => {
+            if (body.role === "admin") {
+              window.location.href = "admin/admin_home.html";
+            } else {
+              window.location.href = "user/user_home.html";
+            }
+          }, 1000);
+        } else {
+          // Đăng nhập thất bại
+          errorMsg.style.color = "#e74c3c";
+          errorMsg.textContent = body.message || "Đăng nhập thất bại!";
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        errorMsg.style.color = "#e74c3c";
+        errorMsg.textContent = "Lỗi server!";
+      });
+    });
+
+  </script>
+
+</body>
+
+</html>

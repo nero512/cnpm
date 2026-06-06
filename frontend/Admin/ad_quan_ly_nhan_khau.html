@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quản lý Nhân khẩu</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Optional icons (Font Awesome) -->
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #0f3c3c;
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: #f9f9f9;
+      overflow-x: auto;
+    }
+
+    .sidebar .menu button {
+      color: white;
+      text-align: left;
+      background: none;
+      border: none;
+      width: 100%;
+    }
+
+    .sidebar .menu button:hover {
+      background: #135353;
+      border-radius: 6px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px;
+      min-height: 100vh;
+      background: #f9f9f9;
+      min-width: 0;
+      overflow-x: auto;
+    }
+
+    /* Title + controls */
+    .page-header {
+      gap: 12px;
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .person-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Primary big button */
+    .btn-primary-giant {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
+      padding: 10px 16px;
+      font-weight: 600;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* Small helpers */
+    .filter-row {
+      gap: 12px;
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .table-wrap {
+      margin-top: 18px;
+    }
+
+    /* Make headers indicate sortable */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th .sort-ind {
+      font-size: 0.85em;
+      opacity: 0.6;
+      margin-left: 6px;
+    }
+
+    /* small responsive tweaks */
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 200px;
+      }
+    }
+
+    /* --- Khi nhỏ hơn 992px: thu xuống còn 160px --- */
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 160px;
+      }
+    }
+
+    /* --- Khi nhỏ hơn 768px: ẩn sidebar luôn, giống mobile --- */
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .content {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 14</h4>
+        <div class="menu">
+          <button onclick="goTo('admin_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button onclick="goTo('ad_quan_ly_ho_khau.html')" class="mb-2">QUẢN LÝ HỘ KHẨU</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">QUẢN LÝ NHÂN KHẨU</button>
+          <button onclick="goTo('ad_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+
+          <button onclick="goTo('admin_yeu_cau_xu_ly.html')" class="mb-2">YÊU CẦU XỬ LÝ</button>
+
+        </div>
+      </div>
+
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+          <div class="ms-2" id="usernameDisplay">Quản lý</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content flex-fill">
+      <!-- Stat Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card text-white bg-primary">
+            <div class="card-body">
+              <h5 class="card-title">Tổng số Nhân khẩu Đang sống</h5>
+              <p class="card-text fs-3">12,500</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-success">
+            <div class="card-body">
+              <h5 class="card-title">Tăng trong tháng</h5>
+              <p class="card-text fs-3">+45</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-danger">
+            <div class="card-body">
+              <h5 class="card-title">Giảm trong tháng (Qua đời)</h5>
+              <p class="card-text fs-3">-15</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-white bg-info">
+            <div class="card-body">
+              <h5 class="card-title">Số lượng Căn cước gắn chip</h5>
+              <p class="card-text fs-3">9,800</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Header / Controls -->
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title">Danh sách Nhân khẩu</h3>
+            <small class="text-muted">Quản lý hồ sơ dân cư — xem / thêm / chỉnh sửa</small>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <button id="btnAddPerson" class="btn btn-primary-giant" data-bs-toggle="modal" data-bs-target="#personModal">
+            <i class="fa-solid fa-plus"></i> <span>Thêm Nhân khẩu Mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="filter-row align-items-center">
+        <div class="input-group" style="min-width:260px; flex:1; max-width:520px;">
+          <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input id="searchInput" class="form-control" placeholder="Tìm theo Họ tên hoặc Mã Định danh/CCCD...">
+          <button class="btn btn-outline-secondary" id="clearSearchBtn" title="Xóa">×</button>
+        </div>
+
+        <div class="d-flex gap-2">
+          <select id="filterGender" class="form-select">
+            <option value="All">Tất cả giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+          </select>
+
+          <select id="filterAge" class="form-select">
+            <option value="All">Tất cả độ tuổi</option>
+            <option value="Under18">Dưới 18</option>
+            <option value="18-60">18-60</option>
+            <option value="Over60">Trên 60</option>
+          </select>
+
+          <select id="filterResidence" class="form-select">
+            <option value="All">Tất cả tình trạng cư trú</option>
+            <option value="Thường trú">Thường trú</option>
+            <option value="Tạm trú">Tạm trú</option>
+          </select>
+
+          <select id="filterStatus" class="form-select">
+            <option value="All">Tất cả tình trạng nhân thân</option>
+            <option value="Đang sống">Đang sống</option>
+            <option value="Đã qua đời">Đã qua đời</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="personsTable">
+            <thead class="table-light">
+              <tr>
+                <th class="sortable" data-key="cccd">Mã Định danh/CCCD <span class="sort-ind">▲▼</span></th>
+                <th class="sortable" data-key="name">Họ và Tên</th>
+                <th class="sortable" data-key="ngaySinh">Ngày sinh</th>
+                <th class="sortable" data-key="gioiTinh">Giới tính</th>
+                <th class="sortable" data-key="status">Tình trạng Nhân thân</th>
+                <th class="sortable" data-key="diaChi">Nơi Thường trú hiện tại</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="personsTbody">
+              <!-- rows inserted by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add / Edit Person -->
+  <div class="modal fade" id="personModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form id="personForm" class="modal-content" onsubmit="return false;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="personModalTitle">Thêm Nhân khẩu Mới</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editingIndex" value="-1">
+
+          <!-- Group 1: Thông tin Nhân thân Cơ bản -->
+          <h5 class="mb-3">Thông tin Nhân thân Cơ bản</h5>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Họ và Tên <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="name" class="form-control" required maxlength="200" />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Ngày sinh <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="ngaySinh" type="date" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Giới tính <span class="text-danger">*</span></label>
+            <div class="col-sm-9 d-flex align-items-center gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="gioiTinh" id="gioiTinhNam" value="Nam" required>
+                <label class="form-check-label" for="gioiTinhNam">Nam</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="gioiTinh" id="gioiTinhNu" value="Nữ">
+                <label class="form-check-label" for="gioiTinhNu">Nữ</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="gioiTinh" id="gioiTinhKhac" value="Khác">
+                <label class="form-check-label" for="gioiTinhKhac">Khác</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Mã định danh/CCCD <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="cccd" class="form-control" required pattern="\d{12}" placeholder="12 chữ số" />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Dân tộc</label>
+            <div class="col-sm-9">
+              <select id="danToc" class="form-select">
+                <option value="">-- Chọn dân tộc --</option>
+                <option value="Kinh">Kinh</option>
+                <option value="Tày">Tày</option>
+                <option value="Thái">Thái</option>
+                <!-- Thêm các dân tộc khác nếu cần -->
+              </select>
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Tôn giáo</label>
+            <div class="col-sm-9">
+              <select id="tonGiao" class="form-select">
+                <option value="">-- Chọn tôn giáo --</option>
+                <option value="Không">Không</option>
+                <option value="Phật giáo">Phật giáo</option>
+                <option value="Công giáo">Công giáo</option>
+                <!-- Thêm các tôn giáo khác nếu cần -->
+              </select>
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Quốc tịch</label>
+            <div class="col-sm-9">
+              <select id="quocTich" class="form-select">
+                <option value="Việt Nam">Việt Nam</option>
+                <option value="Mỹ">Mỹ</option>
+                <option value="Trung Quốc">Trung Quốc</option>
+                <!-- Thêm các quốc tịch khác nếu cần -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Group 2: Thông tin Nơi cư trú -->
+          <h5 class="mb-3 mt-4">Thông tin Nơi cư trú</h5>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Địa chỉ Thường trú <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="diaChi" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Quan hệ với Chủ hộ <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <select id="quanHe" class="form-select" required>
+                <option value="">-- Chọn quan hệ --</option>
+                <option value="Chủ hộ">Chủ hộ</option>
+                <option value="Vợ/Chồng">Vợ/Chồng</option>
+                <option value="Con">Con</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Ngày đăng ký Thường trú</label>
+            <div class="col-sm-9">
+              <input id="ngayDangKy" type="date" class="form-control" />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Tình trạng Cư trú</label>
+            <div class="col-sm-9">
+              <select id="tinhTrangCuTru" class="form-select">
+                <option value="Thường trú">Thường trú</option>
+                <option value="Tạm trú">Tạm trú</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Group 3: Thông tin Cha Mẹ -->
+          <h5 class="mb-3 mt-4">Thông tin Cha Mẹ</h5>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Họ tên Cha <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="tenCha" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Mã định danh Cha</label>
+            <div class="col-sm-9">
+              <input id="cccdCha" class="form-control" pattern="\d{12}" placeholder="12 chữ số" />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Họ tên Mẹ <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="tenMe" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Mã định danh Mẹ</label>
+            <div class="col-sm-9">
+              <input id="cccdMe" class="form-control" pattern="\d{12}" placeholder="12 chữ số" />
+            </div>
+          </div>
+
+          <div id="formAlert" class="alert alert-danger d-none" role="alert"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button id="savePersonBtn" type="submit" class="btn btn-primary">Lưu Hồ sơ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cập nhật Tình trạng Nhân thân -->
+  <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form id="statusForm" class="modal-content" onsubmit="return false;">
+        <div class="modal-header">
+          <h5 class="modal-title">Cập nhật Tình trạng Nhân thân</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="statusIndex" value="-1">
+
+          <div class="mb-3">
+            <label class="form-label">Tình trạng Mới <span class="text-danger">*</span></label>
+            <select id="newStatus" class="form-select" required onchange="toggleDeathFields()">
+              <option value="">-- Chọn --</option>
+              <option value="Đang sống">Đang sống</option>
+              <option value="Đã qua đời">Đã qua đời</option>
+              <option value="Mất tích">Mất tích</option>
+            </select>
+          </div>
+
+          <div id="deathFields" style="display: none;">
+            <div class="mb-3">
+              <label class="form-label">Ngày qua đời <span class="text-danger">*</span></label>
+              <input id="deathDate" type="date" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Số Giấy báo tử <span class="text-danger">*</span></label>
+              <input id="deathCert" class="form-control" placeholder="Số Giấy báo tử" />
+            </div>
+          </div>
+
+          <div class="alert alert-warning mt-3">
+            Hồ sơ sẽ được đánh dấu là Đã qua đời và tự động kích hoạt thủ tục Xóa Cư trú.
+          </div>
+
+          <div id="formAlertStatus" class="alert alert-danger d-none" role="alert"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button id="saveStatusBtn" type="submit" class="btn btn-danger">Cập nhật Tình trạng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Delete -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Xác nhận Xóa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <p>Bạn có chắc muốn xóa nhân khẩu này?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+          <button id="confirmDeleteBtn" type="button" class="btn btn-danger">Có</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Basic data model (in-memory)
+   /* const samplePersons = [
+      {
+        cccd: '001234567890',
+        name: 'Nguyễn Văn A',
+        ngaySinh: '1990-05-15',
+        gioiTinh: 'Nam',
+        quanHe: 'Chủ hộ',
+        diaChi: '123 Đường ABC, Phường XYZ, Quận 1, TP.HCM',
+        tinhTrangCuTru: 'Thường trú',
+        danToc: 'Kinh',
+        tonGiao: 'Không',
+        quocTich: 'Việt Nam',
+        ngayDangKy: '2010-01-01',
+        tenCha: 'Nguyễn Văn X',
+        cccdCha: '000123456789',
+        tenMe: 'Trần Thị Y',
+        cccdMe: '000987654321',
+        status: 'Đang sống',
+        death_date: null,
+        death_cert: null
+      }
+    ];
+    */
+
+    let persons = []; // Khởi tạo mảng rỗng
+    const tbody = document.getElementById('personsTbody');
+
+    //gọi api
+    async function fetchPersons() {
+      try {
+        const res = await fetch('http://localhost:3000/api/persons'); // URL API
+        if (!res.ok) throw new Error('Lỗi khi lấy dữ liệu');
+        persons = await res.json(); // gán dữ liệu trả về vào mảng persons
+        renderTable(currentSort.key, currentSort.dir);
+      } catch (err) {
+        console.error(err);
+        alert('Không thể tải dữ liệu nhân khẩu từ server');
+      }
+    }
+
+    async function addPerson(data) {
+      try {
+        const res = await fetch('http://localhost:3000/api/persons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Thêm nhân khẩu thành công');
+        } else {
+          alert(result.error || 'Lỗi thêm nhân khẩu');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi server');
+      }
+    }
+
+    async function updatePerson(cccd, data) {
+      try {
+        const res = await fetch(`http://localhost:3000/api/persons/${cccd}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Cập nhật thành công');
+        } else {
+          alert(result.error || 'Lỗi cập nhật');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi server');
+      }
+    }
+
+   async function deletePerson(cccd) {
+    if (!confirm('Bạn có chắc chắn muốn xóa nhân khẩu này?')) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/persons/${cccd}`, {
+        method: 'DELETE'
+      });
+      const result = await res.json();
+
+      if (res.ok) {
+        alert('Xóa thành công');
+      } else {
+        alert(result.error || 'Lỗi xóa');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi server');
+    }
+  }
+
+
+    async function updateStatus(cccd, statusData) {
+      try {
+        const res = await fetch(`http://localhost:3000/api/persons/${cccd}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(statusData)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Cập nhật trạng thái thành công');
+        } else {
+          alert(result.error || 'Lỗi cập nhật trạng thái');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi server');
+      }
+    }
+
+
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchPersons();
+    });
+
+    // Helpers
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function calculateAge(birthDateStr) {
+      const currentDate = new Date(2025, 10, 12); // November 12, 2025 (month 0-based)
+      const birthDate = new Date(birthDateStr);
+      let age = currentDate.getFullYear() - birthDate.getFullYear();
+      const m = currentDate.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && currentDate.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    function statusBadge(p) {
+      if (p.status === 'Đang sống') {
+        return '<span class="badge bg-success">Đang sống</span>';
+      } else if (p.status === 'Đã qua đời') {
+        let dateInfo = p.death_date ? ` (${formatDate(p.death_date)})` : '';
+        return `<span class="badge bg-danger">Đã qua đời${dateInfo}</span>`;
+      } else {
+        return `<span class="badge bg-secondary">${p.status}</span>`;
+      }
+    }
+
+    // Render table with current filters/search
+    function renderTable(sortKey = null, sortDir = 1) {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const genderFilter = document.getElementById('filterGender').value;
+      const ageFilter = document.getElementById('filterAge').value;
+      const residenceFilter = document.getElementById('filterResidence').value;
+      const statusFilter = document.getElementById('filterStatus').value;
+
+      let filtered = persons.filter(p => {
+        if (genderFilter !== 'All' && p.gioiTinh !== genderFilter) return false;
+        if (residenceFilter !== 'All' && p.tinhTrangCuTru !== residenceFilter) return false;
+        if (statusFilter !== 'All' && p.status !== statusFilter) return false;
+        const age = calculateAge(p.ngaySinh);
+        if (ageFilter === 'Under18' && age >= 18) return false;
+        if (ageFilter === '18-60' && (age < 18 || age > 60)) return false;
+        if (ageFilter === 'Over60' && age <= 60) return false;
+        if (q) {
+          const hay = `${p.name} ${p.cccd}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (sortKey) {
+        filtered.sort((a, b) => {
+          let va = a[sortKey] || '';
+          let vb = b[sortKey] || '';
+          if (sortKey === 'ngaySinh') {
+            return (new Date(va) - new Date(vb)) * sortDir;
+          }
+          if (va < vb) return -1 * sortDir;
+          if (va > vb) return 1 * sortDir;
+          return 0;
+        });
+      }
+
+      tbody.innerHTML = '';
+      filtered.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><a href="#" onclick="viewPerson(${idx})">${p.cccd}</a></td>
+          <td>${p.name}</td>
+          <td>${formatDate(p.ngaySinh)}</td>
+          <td>${p.gioiTinh}</td>
+          <td>${statusBadge(p)}</td>
+          <td>${p.diaChi}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary me-1" title="Chỉnh sửa" onclick="editPerson(${idx})"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="btn btn-sm btn-outline-warning me-1" title="Cập nhật Tình trạng" onclick="openStatusModal(${idx})"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="deletePerson('${p.cccd}')"><i class="fa-regular fa-trash-can"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Save to localStorage
+      localStorage.setItem('persons', JSON.stringify(persons));
+    }
+
+    // Sorting behavior
+    let currentSort = { key: 'cccd', dir: 1 };
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (currentSort.key === key) currentSort.dir *= -1;
+        else { currentSort.key = key; currentSort.dir = 1; }
+        renderTable(currentSort.key, currentSort.dir);
+      });
+    });
+
+    // Filters & search
+    document.getElementById('filterGender').addEventListener('change', () => renderTable(currentSort.key, currentSort.dir));
+    document.getElementById('filterAge').addEventListener('change', () => renderTable(currentSort.key, currentSort.dir));
+    document.getElementById('filterResidence').addEventListener('change', () => renderTable(currentSort.key, currentSort.dir));
+    document.getElementById('filterStatus').addEventListener('change', () => renderTable(currentSort.key, currentSort.dir));
+    document.getElementById('searchInput').addEventListener('input', () => renderTable(currentSort.key, currentSort.dir));
+    document.getElementById('clearSearchBtn').addEventListener('click', () => { document.getElementById('searchInput').value = ''; renderTable(currentSort.key, currentSort.dir); });
+
+    // Modal behavior for add/edit
+    const personModalEl = document.getElementById('personModal');
+    const personModal = new bootstrap.Modal(personModalEl, { keyboard: false });
+
+    function openAddModal() {
+      document.getElementById('personModalTitle').textContent = 'Thêm Nhân khẩu Mới';
+      document.getElementById('editingIndex').value = -1;
+      document.getElementById('personForm').reset();
+      document.getElementById('formAlert').classList.add('d-none');
+      // Reset radio buttons
+      document.querySelectorAll('input[name="gioiTinh"]').forEach(r => r.checked = false);
+      personModal.show();
+    }
+
+    // Attach click handler to add button
+    document.getElementById('btnAddPerson').addEventListener('click', openAddModal);
+
+    // Save person
+    document.getElementById('personForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const idx = parseInt(document.getElementById('editingIndex').value, 10);
+      const name = document.getElementById('name').value.trim();
+      const ngaySinh = document.getElementById('ngaySinh').value;
+      const gioiTinh = document.querySelector('input[name="gioiTinh"]:checked')?.value;
+      const cccd = document.getElementById('cccd').value.trim();
+      const danToc = document.getElementById('danToc').value;
+      const tonGiao = document.getElementById('tonGiao').value;
+      const quocTich = document.getElementById('quocTich').value;
+      const diaChi = document.getElementById('diaChi').value.trim();
+      const quanHe = document.getElementById('quanHe').value;
+      const ngayDangKy = document.getElementById('ngayDangKy').value;
+      const tinhTrangCuTru = document.getElementById('tinhTrangCuTru').value;
+      const tenCha = document.getElementById('tenCha').value.trim();
+      const cccdCha = document.getElementById('cccdCha').value.trim();
+      const tenMe = document.getElementById('tenMe').value.trim();
+      const cccdMe = document.getElementById('cccdMe').value.trim();
+
+      const alertBox = document.getElementById('formAlert');
+      alertBox.classList.add('d-none');
+
+      // Basic validation
+      if (!name || !ngaySinh || !gioiTinh || !cccd || !diaChi || !quanHe || !tenCha || !tenMe) {
+        alertBox.textContent = 'Vui lòng điền đầy đủ các trường bắt buộc (*).';
+        alertBox.classList.remove('d-none');
+        return;
+      }
+      if (!/^\d{12}$/.test(cccd)) {
+        alertBox.textContent = 'Mã CCCD phải là 12 chữ số.';
+        alertBox.classList.remove('d-none');
+        return;
+      }
+
+      const person = {
+        cccd, name, ngaySinh, gioiTinh, quanHe, diaChi, tinhTrangCuTru,
+        danToc, tonGiao, quocTich, ngayDangKy,
+        tenCha, cccdCha, tenMe, cccdMe,
+        status: 'Đang sống', // Default for new
+        death_date: null,
+        death_cert: null
+      };
+
+      if (idx >= 0) {
+        await updatePerson(cccd, person);
+      } else {
+        await addPerson(person);
+      }
+
+      personModal.hide();
+      fetchPersons(); // Reload từ API
+        });
+
+    // Edit
+    function editPerson(listIndex) {
+      const p = persons[listIndex];
+      if (!p) return;
+      document.getElementById('personModalTitle').textContent = 'Chỉnh sửa Nhân khẩu';
+      document.getElementById('editingIndex').value = listIndex;
+      document.getElementById('name').value = p.name || '';
+      document.getElementById('ngaySinh').value = p.ngaySinh || '';
+      document.querySelector(`input[name="gioiTinh"][value="${p.gioiTinh}"]`).checked = true;
+      document.getElementById('cccd').value = p.cccd || '';
+      document.getElementById('danToc').value = p.danToc || '';
+      document.getElementById('tonGiao').value = p.tonGiao || '';
+      document.getElementById('quocTich').value = p.quocTich || 'Việt Nam';
+      document.getElementById('diaChi').value = p.diaChi || '';
+      document.getElementById('quanHe').value = p.quanHe || '';
+      document.getElementById('ngayDangKy').value = p.ngayDangKy || '';
+      document.getElementById('tinhTrangCuTru').value = p.tinhTrangCuTru || 'Thường trú';
+      document.getElementById('tenCha').value = p.tenCha || '';
+      document.getElementById('cccdCha').value = p.cccdCha || '';
+      document.getElementById('tenMe').value = p.tenMe || '';
+      document.getElementById('cccdMe').value = p.cccdMe || '';
+      document.getElementById('formAlert').classList.add('d-none');
+      personModal.show();
+    }
+
+    // Update Status Modal
+    const statusModalEl = document.getElementById('statusModal');
+    const statusModal = new bootstrap.Modal(statusModalEl, { keyboard: false });
+
+    function toggleDeathFields() {
+      const status = document.getElementById('newStatus').value;
+      document.getElementById('deathFields').style.display = (status === 'Đã qua đời') ? 'block' : 'none';
+      if (status !== 'Đã qua đời') {
+        document.getElementById('deathDate').required = false;
+        document.getElementById('deathCert').required = false;
+      } else {
+        document.getElementById('deathDate').required = true;
+        document.getElementById('deathCert').required = true;
+      }
+    }
+
+    function openStatusModal(listIndex) {
+      const p = persons[listIndex];
+      if (!p) return;
+
+      document.getElementById('statusIndex').value = listIndex;
+      document.getElementById('newStatus').value = p.status || 'Đang sống';
+      document.getElementById('deathDate').value = p.death_date || '';
+      document.getElementById('deathCert').value = p.death_cert || '';
+
+      toggleDeathFields();
+      document.getElementById('formAlertStatus').classList.add('d-none');
+
+      statusModal.show();
+    }
+
+
+    document.getElementById('statusForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const idx = parseInt(document.getElementById('statusIndex').value, 10);
+      const p = persons[idx];
+      if (!p) return;
+
+      const newStatus = document.getElementById('newStatus').value;
+      const deathDate = document.getElementById('deathDate').value;
+      const deathCert = document.getElementById('deathCert').value.trim();
+
+      const alertBox = document.getElementById('formAlertStatus');
+      alertBox.classList.add('d-none');
+
+      if (newStatus === 'Đã qua đời' && (!deathDate || !deathCert)) {
+        alertBox.textContent = 'Vui lòng điền ngày qua đời và số Giấy báo tử.';
+        alertBox.classList.remove('d-none');
+        return;
+      }
+
+      const payload = {
+        status: newStatus,
+        death_date: newStatus === 'Đã qua đời' ? deathDate : null,
+        death_cert: newStatus === 'Đã qua đời' ? deathCert : null
+      };
+
+      await updateStatus(p.cccd, payload);
+
+      statusModal.hide();
+    });
+
+
+    // Delete
+    /*const confirmModalEl = document.getElementById('confirmModal');
+    const confirmModal = new bootstrap.Modal(confirmModalEl);
+    let deleteIndex = -1;
+    function deletePerson(listIndex) {
+      deleteIndex = listIndex;
+      confirmModal.show();
+    }
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+      if (deleteIndex >= 0) {
+        persons.splice(deleteIndex, 1);
+        renderTable(currentSort.key, currentSort.dir);
+      }
+      confirmModal.hide();
+    }); */
+
+    // View (simple alert for now, or extend to modal if needed)
+    function viewPerson(idx) {
+      const p = persons[idx];
+      alert(`Chi tiết: ${p.name} - CCCD: ${p.cccd}\nNgày sinh: ${formatDate(p.ngaySinh)}\nGiới tính: ${p.gioiTinh}\n...`); // Placeholder
+    }
+
+    // Initialize
+    renderTable(currentSort.key, currentSort.dir);
+
+    // Navigation / helpers
+    function goTo(p) { window.location.href = p; }
+    function logout() { localStorage.removeItem('username'); window.location.href = '/'; }
+
+    // Set username display if present
+    const username = localStorage.getItem('username') || 'Quản lý';
+    document.getElementById('usernameDisplay').textContent = username;
+  </script>
+</body>
+
+</html>

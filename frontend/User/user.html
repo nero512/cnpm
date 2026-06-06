@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quản lý Cư trú</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Optional icons (Font Awesome) -->
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #0f3c3c;
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: #f9f9f9;
+      overflow-x: auto;
+    }
+
+    .sidebar .menu button {
+      color: white;
+      text-align: left;
+      background: none;
+      border: none;
+      width: 100%;
+    }
+
+    .sidebar .menu button:hover {
+      background: #135353;
+      border-radius: 6px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px;
+      min-height: 100vh;
+      background: #f4f6f8;
+    }
+
+    /* Title + controls */
+    .page-header {
+      gap: 12px;
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .person-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Card style: modern with hover shadow */
+    .utility-cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .utility-card {
+      cursor: pointer;
+      flex: 1 1 420px;
+      min-height: 160px;
+      border-radius: 14px;
+      padding: 22px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      box-shadow: 0 6px 20px rgba(15, 60, 60, 0.06);
+      transition: transform .18s ease, box-shadow .18s ease;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .utility-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(15, 60, 60, 0.12);
+    }
+
+    .utility-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: #fff;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+      box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .utility-body {
+      flex: 1;
+    }
+
+    .utility-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .utility-sub {
+      color: #6c757d;
+      font-size: 0.95rem;
+    }
+
+    /* Card small badge */
+    .card-badge {
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    /* Modal grid labels */
+    .info-label {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    .info-value {
+      font-weight: 600;
+    }
+
+    /* Member list table tweaks */
+    .member-table thead th {
+      font-size: 0.9rem;
+    }
+
+    .member-table tbody td {
+      vertical-align: middle;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .utility-card {
+        flex-basis: 100%;
+      }
+    }
+
+    /* Keep small muted class */
+    .small-muted {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 36</h4>
+        <div class="menu">
+          <button onclick="goTo('user_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">THÔNG TIN CÁ NHÂN</button>
+          <button onclick="goTo('cap_nhat_thong_tin.html')" class="mb-2">CẬP NHẬT THÔNG TIN</button>
+          <button onclick="goTo('user_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+          <div class="ms-2" id="usernameDisplay">Quản lý</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content flex-fill">
+      <!-- Header / Controls (kept) -->
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title">Thông tin cá nhân</h3>
+            <small class="person-title text-muted">Bảng điều khiển nhanh — mở thẻ để xem chi tiết</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- === START: Replaced main content (Dashboard) === -->
+      <div class="page-body">
+        <div class="container my-4">
+          <!-- Small profile summary (kept to preserve some IDs used elsewhere) -->
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <img id="avatarImg" src="https://via.placeholder.com/120" alt="avatar" class="rounded"
+              style="width:84px;height:84px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,0.06)">
+            <div>
+              <h4 id="fullName" class="mb-0">Nguyễn Văn A</h4>
+              <div class="small-muted" id="cccdShort">CCCD: 001234567890</div>
+            </div>
+            <div class="ms-auto">
+              <button id="btnEditAccount" class="btn btn-outline-secondary btn-sm"><i
+                  class="fa-regular fa-pen-to-square"></i> Chỉnh sửa</button>
+            </div>
+          </div>
+
+          <!-- Utility cards row -->
+          <div class="utility-cards mb-4">
+            <!-- Card 1: Thẻ CCCD -->
+            <div class="utility-card" id="card-cccd" role="button" data-bs-toggle="modal" data-bs-target="#modalCCCD"
+              aria-controls="modalCCCD">
+              <div class="utility-icon"><i class="fa-solid fa-id-card"></i></div>
+              <div class="utility-body">
+                <div class="utility-title">Thẻ CCCD</div>
+                <div class="utility-sub">Xem mã số, ngày cấp và thông tin nhận dạng</div>
+              </div>
+              <div class="ms-auto">
+                <div class="card-badge bg-light text-muted">Chi tiết</div>
+              </div>
+            </div>
+
+            <!-- Card 2: Thông tin cư trú -->
+            <div class="utility-card" id="card-cutru" role="button" data-bs-toggle="modal" data-bs-target="#modalCuTru"
+              aria-controls="modalCuTru">
+              <div class="utility-icon" style="background:linear-gradient(135deg,#0ea5a5,#0b7285)"><i
+                  class="fa-solid fa-house"></i></div>
+              <div class="utility-body">
+                <div class="utility-title">Thông tin cư trú</div>
+                <div class="utility-sub">Nơi thường trú, tạm trú và thông tin hộ gia đình</div>
+              </div>
+              <div class="ms-auto">
+                <div class="card-badge bg-light text-muted">Quản lý</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optional: quick hint / small notes -->
+          <div class="mb-3">
+            <small class="small-muted">Nhấn vào từng thẻ để mở popup chi tiết. Các dữ liệu là mẫu (dummy) từ `db` — hàm
+              <code>render()</code> sẽ đổ dữ liệu vào popup.</small>
+          </div>
+
+        </div> <!-- .container -->
+      </div>
+      <!-- === END: Replaced main content === -->
+
+      <!-- Modal: Thẻ CCCD -->
+      <div class="modal fade" id="modalCCCD" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-id-card me-2"></i> Thẻ Căn cước công dân (CCCD)</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Grid layout for card -->
+              <div class="row g-3">
+                <div class="col-12">
+                  <div class="p-3 rounded"
+                    style="background:linear-gradient(90deg,#eef7ff,#ffffff); border:1px solid rgba(13,110,253,0.06);">
+                    <div class="d-flex align-items-center gap-3">
+                      <div style="width:110px;">
+                        <img id="cccdPhoto" src="https://via.placeholder.com/110x140" alt="photo"
+                          style="width:110px;height:140px;object-fit:cover;border-radius:6px;box-shadow:0 6px 18px rgba(13,110,253,0.08)">
+                      </div>
+                      <div class="flex-fill">
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="info-label">Số CCCD</div>
+                            <div class="info-value" id="cccd_number">-</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="info-label">Ngày cấp</div>
+                            <div class="info-value" id="cccd_ngayCap">-</div>
+                          </div>
+
+                          <div class="col-6 mt-3">
+                            <div class="info-label">Họ và tên</div>
+                            <div class="info-value" id="cccd_name">-</div>
+                          </div>
+                          <div class="col-6 mt-3">
+                            <div class="info-label">Ngày sinh</div>
+                            <div class="info-value" id="cccd_dob">-</div>
+                          </div>
+
+                          <div class="col-6 mt-3">
+                            <div class="info-label">Giới tính</div>
+                            <div class="info-value" id="cccd_gender">-</div>
+                          </div>
+                          <div class="col-6 mt-3">
+                            <div class="info-label">Quốc tịch</div>
+                            <div class="info-value" id="cccd_national">-</div>
+                          </div>
+
+                          <div class="col-12 mt-3">
+                            <div class="info-label">Quê quán</div>
+                            <div class="info-value" id="cccd_queQuan">-</div>
+                          </div>
+
+                          <div class="col-12 mt-3">
+                            <div class="info-label">Nơi thường trú</div>
+                            <div class="info-value" id="cccd_thuongTru">-</div>
+                          </div>
+
+                          <div class="col-12 mt-3">
+                            <div class="info-label">Đặc điểm nhận dạng</div>
+                            <div class="info-value" id="cccd_dacDiem">-</div>
+                          </div>
+                        </div> <!-- row -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div> <!-- row -->
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Thông tin cư trú -->
+      <div class="modal fade" id="modalCuTru" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-house me-2"></i> Thông tin cư trú</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <div class="container-fluid">
+                <div class="row">
+                  <!-- Phần 1: Thông tin hành chính -->
+                  <div class="col-lg-6 col-md-12">
+                    <h6 class="mb-3">Thông tin hành chính</h6>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <div class="info-label">Họ và tên</div>
+                        <div class="info-value" id="ct_name">-</div>
+                      </div>
+                      <div class="col-6">
+                        <div class="info-label">Số CCCD</div>
+                        <div class="info-value" id="ct_cccd">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Giới tính</div>
+                        <div class="info-value" id="ct_gender">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Ngày sinh</div>
+                        <div class="info-value" id="ct_dob">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Dân tộc</div>
+                        <div class="info-value" id="ct_danToc">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Tôn giáo</div>
+                        <div class="info-value" id="ct_tonGiao">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Quốc tịch</div>
+                        <div class="info-value" id="ct_quocTich">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Quê quán</div>
+                        <div class="info-value" id="ct_queQuan">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3">
+                        <div class="info-label">Trạng thái công dân</div>
+                        <div class="info-value" id="ct_status">-</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Phần 2: Thông tin cư trú -->
+                  <div class="col-lg-6 col-md-12">
+                    <h6 class="mb-3">Thông tin cư trú</h6>
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <div class="info-label">Nơi thường trú</div>
+                        <div class="info-value" id="ct_thuongTru">-</div>
+                      </div>
+                      <div class="col-12 mt-2">
+                        <div class="info-label">Nơi tạm trú</div>
+                        <div class="info-value" id="ct_tamTru">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Ngày bắt đầu tạm trú</div>
+                        <div class="info-value" id="ct_tamTru_from">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Ngày hết hạn tạm trú</div>
+                        <div class="info-value" id="ct_tamTru_to">-</div>
+                      </div>
+
+                      <div class="col-12 mt-2">
+                        <div class="info-label">Nơi ở hiện tại</div>
+                        <div class="info-value" id="ct_noiOHienTai">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3">
+                        <hr>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="info-label">Họ tên chủ hộ</div>
+                        <div class="info-value" id="ct_chuHo">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Số định danh chủ hộ</div>
+                        <div class="info-value" id="ct_chuHo_cccd">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Quan hệ với chủ hộ</div>
+                        <div class="info-value" id="ct_quanHeChuHo">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3 d-flex justify-content-end">
+                        <button id="btnViewMembers" class="btn btn-outline-primary">Xem thành viên khác trong hộ gia
+                          đình</button>
+                      </div>
+                    </div>
+                  </div>
+                </div> <!-- row -->
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Thành viên hộ gia đình -->
+      <div class="modal fade" id="modalMembers" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-users me-2"></i> Thành viên trong hộ gia đình</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover member-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Họ và tên</th>
+                      <th>Số CCCD</th>
+                      <th>Ngày sinh</th>
+                      <th>Giới tính</th>
+                      <th>Quan hệ</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="membersTbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bootstrap JS bundle -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+      <!-- Font Awesome for icons -->
+      <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+      <script>
+        /**
+         * DB (dummy data) - toàn bộ dữ liệu mẫu nằm ở đây.
+         * Bạn có thể mở rộng/ thay đổi dữ liệu này để test các modal.
+         */
+        const db = {
+          person: {
+            name: 'Nguyễn Văn A',
+            cccd: '001234567890',
+            ngaySinh: '1990-05-15',
+            gioiTinh: 'Nam',
+            quocTich: 'Việt Nam',
+            queQuan: 'Hà Nội',
+            noiThuongTru: '49 ngõ 87 phố LTN, phường BM, quận ABC, Hà Nội',
+            dacDiem: 'Có vết sẹo nhỏ ở cánh tay trái',
+            ngayCap: '2018-03-10',
+            photo: 'https://via.placeholder.com/220x280?text=Photo'
+          },
+          cuTru: {
+            tamTru: 'Số nhà 12, đường XYZ, Quận 3, TP.HCM',
+            tamTru_from: '2024-01-01',
+            tamTru_to: '2025-01-01',
+            noiOHienTai: 'Căn hộ 502, Tòa A, Khu đô thị MNO',
+            chuHo: 'Nguyễn Văn A',
+            chuHo_cccd: '001234567890',
+            quanHeChuHo: 'Chủ hộ',
+            status: 'Đang sống' // hoặc 'Đã chết'
+          },
+          household: {
+            code: 'HK-2025-0001',
+            address: '123 Đường ABC, Phường XYZ, Quận 1, TP.HCM',
+            members: [
+              {
+                name: 'Nguyễn Văn A',
+                cccd: '001234567890',
+                dob: '1990-05-15',
+                gender: 'Nam',
+                relation: 'Chủ hộ',
+                status: 'Đang sống'
+              },
+              {
+                name: 'Trần Thị B',
+                cccd: '002345678901',
+                dob: '1992-02-20',
+                gender: 'Nữ',
+                relation: 'Vợ',
+                status: 'Đang sống'
+              },
+              {
+                name: 'Nguyễn Văn C',
+                cccd: '003456789012',
+                dob: '2014-07-10',
+                gender: 'Nam',
+                relation: 'Con',
+                status: 'Đang sống'
+              }
+            ]
+          }
+        };
+
+        // Format date helper (YYYY-MM-DD -> DD/MM/YYYY)
+        function formatDate(dateStr) {
+          if (!dateStr) return '';
+          const d = new Date(dateStr);
+          if (isNaN(d)) return dateStr; // fallback
+          const dd = String(d.getDate()).padStart(2, '0');
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const yy = d.getFullYear();
+          return `${dd}/${mm}/${yy}`;
+        }
+
+        /**
+         * render() - đổ dữ liệu từ db vào modal / card.
+         * Gọi render() khi DOM sẵn sàng.
+         */
+        function render() {
+          // Small summary in dashboard header
+          document.getElementById('fullName').textContent = db.person.name;
+          document.getElementById('cccdShort').textContent = `CCCD: ${db.person.cccd}`;
+          document.getElementById('avatarImg').src = db.person.photo;
+
+          // --- Thẻ CCCD modal ---
+          document.getElementById('cccd_number').textContent = db.person.cccd;
+          document.getElementById('cccd_name').textContent = db.person.name;
+          document.getElementById('cccd_dob').textContent = formatDate(db.person.ngaySinh);
+          document.getElementById('cccd_gender').textContent = db.person.gioiTinh;
+          document.getElementById('cccd_national').textContent = db.person.quocTich;
+          document.getElementById('cccd_queQuan').textContent = db.person.queQuan;
+          document.getElementById('cccd_thuongTru').textContent = db.person.noiThuongTru;
+          document.getElementById('cccd_dacDiem').textContent = db.person.dacDiem;
+          document.getElementById('cccd_ngayCap').textContent = formatDate(db.person.ngayCap);
+          document.getElementById('cccdPhoto').src = db.person.photo;
+
+          // --- Thông tin cư trú modal ---
+          document.getElementById('ct_name').textContent = db.person.name;
+          document.getElementById('ct_cccd').textContent = db.person.cccd;
+          document.getElementById('ct_gender').textContent = db.person.gioiTinh;
+          document.getElementById('ct_dob').textContent = formatDate(db.person.ngaySinh);
+          document.getElementById('ct_danToc').textContent = db.person.danToc || 'Kinh';
+          document.getElementById('ct_tonGiao').textContent = db.person.tonGiao || 'Không';
+          document.getElementById('ct_quocTich').textContent = db.person.quocTich;
+          document.getElementById('ct_queQuan').textContent = db.person.queQuan;
+
+          document.getElementById('ct_status').textContent = db.cuTru.status || 'Đang sống';
+
+          document.getElementById('ct_thuongTru').textContent = db.person.noiThuongTru;
+          document.getElementById('ct_tamTru').textContent = db.cuTru.tamTru;
+          document.getElementById('ct_tamTru_from').textContent = formatDate(db.cuTru.tamTru_from);
+          document.getElementById('ct_tamTru_to').textContent = formatDate(db.cuTru.tamTru_to);
+          document.getElementById('ct_noiOHienTai').textContent = db.cuTru.noiOHienTai;
+          document.getElementById('ct_chuHo').textContent = db.cuTru.chuHo;
+          document.getElementById('ct_chuHo_cccd').textContent = db.cuTru.chuHo_cccd;
+          document.getElementById('ct_quanHeChuHo').textContent = db.cuTru.quanHeChuHo;
+
+          // Prepare members list (for modalMembers)
+          const tbody = document.getElementById('membersTbody');
+          tbody.innerHTML = '';
+          db.household.members.forEach((m, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${idx + 1}</td>
+              <td>${escapeHTML(m.name)}</td>
+              <td>${escapeHTML(m.cccd || '-')}</td>
+              <td>${formatDate(m.dob)}</td>
+              <td>${escapeHTML(m.gender || '-')}</td>
+              <td>${escapeHTML(m.relation || '-')}</td>
+              <td>${escapeHTML(m.status || '-')}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        // small helper to escape HTML for safety
+        function escapeHTML(s) {
+          if (!s) return '';
+          return s.toString().replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+        }
+
+        // Open members modal when clicking button
+        document.addEventListener('DOMContentLoaded', () => {
+          // initial render
+          const username = localStorage.getItem('username') || 'Quản lý'; // Fallback nếu chưa đăng nhập
+          document.getElementById('usernameDisplay').textContent = username;
+          render();
+          document.getElementById('btnViewMembers').addEventListener('click', (ev) => {
+            const bs = new bootstrap.Modal(document.getElementById('modalMembers'));
+            bs.show();
+          });
+
+          // Keep old btnEditAccount behaviour (simple demo) if exists
+          const editBtn = document.getElementById('btnEditAccount');
+          if (editBtn) {
+            editBtn.addEventListener('click', () => {
+              const newName = prompt('Chỉnh sửa tên hiển thị:', db.person.name);
+              if (newName) {
+                db.person.name = newName;
+                render();
+              }
+            });
+          }
+        });
+
+        // Utility navigation (kept)
+        function goTo(p) { window.location.href = p; }
+        function logout() { localStorage.removeItem('username'); window.location.href = '/'; }
+      </script>
+    </main>
+  </div>
+</body>
+
+</html>

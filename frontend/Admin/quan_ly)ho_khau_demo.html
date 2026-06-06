@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lịch Sinh Hoạt Cộng Đồng - Tổ Dân Phố</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .sidebar {
+      width: 250px;
+      background-color: #0f3c3c;
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+    .content { 
+        flex: 1; 
+        padding: 24px; 
+        min-height:100vh; 
+        background:#f9f9f9;
+        overflow-x: auto; 
+    }
+    .sidebar .menu button { color: white; text-align: left; background: none; border: none; width:100%; padding: 8px 12px;}
+    .sidebar .menu button:hover { background:#135353; border-radius:6px;}
+
+    /* Title + controls */
+    .page-header { gap: 12px; align-items: center; display:flex; flex-wrap:wrap; justify-content:space-between; }
+    .header-left { display:flex; gap:12px; align-items:center; min-width:0; }
+    .person-title { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* Primary big button */
+    .btn-primary-giant {
+      background-color:#0d6efd;
+      border-color:#0d6efd;
+      color:white;
+      padding:10px 16px;
+      font-weight:600;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    /* Small helpers */
+    .filter-row { gap:12px; margin-top:12px; display:flex; flex-wrap:wrap; }
+    .table-wrap { margin-top:18px; }
+
+    /* Make headers indicate sortable */
+    th.sortable { cursor: pointer; user-select: none; }
+    th .sort-ind { font-size:0.85em; opacity:0.6; margin-left:6px; }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    /* small responsive tweaks */
+    @media (max-width: 1200px) {
+      .sidebar { width: 200px; }
+    }
+    @media (max-width: 992px) {
+      .sidebar { width: 160px; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 36</h4>
+        <div class="menu">
+          <button onclick="goTo('admin_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button onclick="goTo('ad_quan_ly_ho_khau.html')" class="mb-2">QUẢN LÝ HỘ KHẨU</button>
+          <button onclick="goTo('ad_quan_ly_nhan_khau.html')" class="mb-2">QUẢN LÝ NHÂN KHẨU</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">LỊCH SINH HOẠT</button>
+          <button onclick="goTo('admin_yeu_cau_xu_ly.html')" class="mb-2">YÊU CẦU XỬ LÝ</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+          <div class="ms-2" id="usernameDisplay">Quản lý</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content flex-fill">
+      <!-- Header / Controls -->
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title" id="pageTitle">Lịch Sinh hoạt Cộng đồng Tổ Dân Phố 36</h3>
+            <small class="text-muted">Quản lý sự kiện cộng đồng – xem / thêm / chỉnh sửa sự kiện</small>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <button id="btnAddEvent" class="btn btn-primary-giant" data-bs-toggle="modal" data-bs-target="#eventModal">
+            <i class="fa-solid fa-plus"></i> <span>Tạo Sự kiện/Thông báo Mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="filter-row align-items-center">
+        <div class="input-group" style="min-width:260px; flex:1; max-width:520px;">
+          <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input id="searchInput" class="form-control" placeholder="Tìm theo tiêu đề, nội dung hoặc người phụ trách...">
+          <button class="btn btn-outline-secondary" id="clearSearchBtn" title="Xóa">×</button>
+        </div>
+
+        <div class="d-flex gap-2">
+          <select id="filterType" class="form-select">
+            <option value="All">Tất cả loại</option>
+            <option value="Họp Tổ dân phố">Họp Tổ dân phố</option>
+            <option value="Hoạt động An ninh/Vệ sinh">Hoạt động An ninh/Vệ sinh</option>
+            <option value="Sự kiện Văn hóa/Thể thao">Sự kiện Văn hóa/Thể thao</option>
+            <option value="Thu phí/Đóng góp">Thu phí/Đóng góp</option>
+            <option value="Thông báo Khẩn cấp">Thông báo Khẩn cấp</option>
+          </select>
+
+          <select id="filterStatus" class="form-select">
+            <option value="All">Tất cả trạng thái</option>
+            <option value="Sắp diễn ra">Sắp diễn ra</option>
+            <option value="Đã tổ chức">Đã tổ chức</option>
+            <option value="Thông báo đang hiệu lực">Thông báo đang hiệu lực</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="eventsTable">
+            <thead class="table-light">
+              <tr>
+                <th class="sortable" data-key="thoi_gian_bat_dau">Ngày &amp; Giờ Bắt đầu <span class="sort-ind" id="sortDatetime">▲▼</span></th>
+                <th class="sortable" data-key="loai">Loại Hoạt động</th>
+                <th class="sortable" data-key="tieu_de">Tiêu đề</th>
+                <th class="sortable" data-key="dia_diem">Địa điểm</th>
+                <th class="sortable" data-key="nguoi_phu_trach">Người Phụ trách</th>
+                <th class="sortable" data-key="trang_thai">Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTbody">
+              <tr>
+                <td colspan="7" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add / Edit Event -->
+  <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form id="eventForm" class="modal-content" onsubmit="return false;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="eventModalTitle">Tạo Sự kiện/Thông báo Mới</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editingId" value="">
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Tiêu đề <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <input id="evtTitle" class="form-control" required maxlength="200" />
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Loại Hoạt động <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <select id="evtType" class="form-select" required>
+                <option value="">-- Chọn loại --</option>
+                <option value="Họp Tổ dân phố">📣 Họp Tổ dân phố</option>
+                <option value="Hoạt động An ninh/Vệ sinh">🗑️ Hoạt động An ninh/Vệ sinh</option>
+                <option value="Sự kiện Văn hóa/Thể thao">🎉 Sự kiện Văn hóa/Thể thao</option>
+                <option value="Thu phí/Đóng góp">💰 Thu phí/Đóng góp</option>
+                <option value="Thông báo Khẩn cấp">🚨 Thông báo Khẩn cấp</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Ngày &amp; Giờ Bắt đầu <span class="text-danger">*</span></label>
+            <div class="col-sm-9 d-flex gap-2">
+              <input id="evtStartDate" type="date" class="form-control" required />
+              <input id="evtStartTime" type="time" class="form-control" required />
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Ngày &amp; Giờ Kết thúc</label>
+            <div class="col-sm-9 d-flex gap-2">
+              <input id="evtEndDate" type="date" class="form-control" />
+              <input id="evtEndTime" type="time" class="form-control" />
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Địa điểm</label>
+            <div class="col-sm-9">
+              <input id="evtLocation" class="form-control" placeholder="Ví dụ: Nhà văn hóa, Sân chung..." />
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Người Phụ trách</label>
+            <div class="col-sm-9">
+              <input id="evtActor" class="form-control" placeholder="Tên và Chức danh" />
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Nội dung Chi tiết/Mục đích</label>
+            <div class="col-sm-9">
+              <textarea id="evtDesc" rows="4" class="form-control" placeholder="Mô tả thêm..."></textarea>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label">Trạng thái <span class="text-danger">*</span></label>
+            <div class="col-sm-9">
+              <select id="evtStatus" class="form-select" required>
+                <option value="">-- Chọn trạng thái --</option>
+                <option value="Sắp diễn ra">Sắp diễn ra</option>
+                <option value="Đã tổ chức">Đã tổ chức</option>
+                <option value="Thông báo đang hiệu lực">Thông báo đang hiệu lực</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="formAlert" class="alert alert-danger d-none" role="alert"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button id="saveEventBtn" type="submit" class="btn btn-primary">Lưu Sự kiện</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api/events';
+    const tbody = document.getElementById('eventsTbody');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    let allEvents = [];
+    let currentSort = { key: 'thoi_gian_bat_dau', dir: 'desc' };
+
+    // ===========================
+    // API Functions
+    // ===========================
+    async function fetchEvents() {
+      try {
+        showLoading(true);
+        const params = new URLSearchParams();
+        
+        const search = document.getElementById('searchInput').value.trim();
+        const loai = document.getElementById('filterType').value;
+        const trangThai = document.getElementById('filterStatus').value;
+        
+        if (search) params.append('search', search);
+        if (loai !== 'All') params.append('loai', loai);
+        if (trangThai !== 'All') params.append('trangThai', trangThai);
+        if (currentSort.key) {
+          params.append('sortKey', currentSort.key);
+          params.append('sortDir', currentSort.dir);
+        }
+
+        const url = `${API_BASE}?${params.toString()}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error('Lỗi khi tải dữ liệu');
+        
+        allEvents = await response.json();
+        renderTable();
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        showError('Không thể tải danh sách sự kiện. Vui lòng thử lại.');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Không thể tải dữ liệu. Vui lòng kiểm tra kết nối.</td></tr>';
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function saveEvent(eventData) {
+      try {
+        showLoading(true);
+        const id = document.getElementById('editingId').value;
+        const isEdit = id !== '';
+        
+        const url = isEdit ? `${API_BASE}/${id}` : API_BASE;
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(eventData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Lỗi khi lưu sự kiện');
+        }
+
+        showSuccess(isEdit ? 'Cập nhật sự kiện thành công!' : 'Thêm sự kiện thành công!');
+        bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+        await fetchEvents();
+      } catch (error) {
+        console.error('Error saving event:', error);
+        document.getElementById('formAlert').textContent = error.message;
+        document.getElementById('formAlert').classList.remove('d-none');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function deleteEvent(id, title) {
+      if (!confirm(`Xóa sự kiện "${title}"?`)) return;
+      
+      try {
+        showLoading(true);
+        const response = await fetch(`${API_BASE}/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Lỗi khi xóa sự kiện');
+
+        showSuccess('Xóa sự kiện thành công!');
+        await fetchEvents();
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        showError('Không thể xóa sự kiện. Vui lòng thử lại.');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // ===========================
+    // UI Functions
+    // ===========================
+    function formatDateTime(dt) {
+      if (!dt) return '';
+      const d = new Date(dt);
+      if (isNaN(d.getTime())) return dt;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    function typeIcon(type) {
+      const icons = {
+        'Họp Tổ dân phố': '📣',
+        'Hoạt động An ninh/Vệ sinh': '🗑️',
+        'Sự kiện Văn hóa/Thể thao': '🎉',
+        'Thu phí/Đóng góp': '💰',
+        'Thông báo Khẩn cấp': '🚨'
+      };
+      return icons[type] || '📋';
+    }
+
+    function statusBadge(status) {
+      const badges = {
+        'Sắp diễn ra': '<span class="badge bg-warning text-dark">Sắp diễn ra</span>',
+        'Đã tổ chức': '<span class="badge bg-success">Đã tổ chức</span>',
+        'Thông báo đang hiệu lực': '<span class="badge bg-info text-dark">Thông báo đang hiệu lực</span>'
+      };
+      return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+    }
+
+    function renderTable() {
+      tbody.innerHTML = '';
+      
+      if (allEvents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Không có sự kiện nào</td></tr>';
+        return;
+      }
+
+      allEvents.forEach(ev => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="white-space:nowrap">${formatDateTime(ev.thoiGianBatDau)}</td>
+          <td>${typeIcon(ev.loai)} <span class="ms-1">${ev.loai}</span></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold" title="${ev.tieuDe}">${ev.tieuDe}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev.diaDiem || ''}">${ev.diaDiem || '-'}</td>
+          <td>${ev.nguoiPhuTrach || '-'}</td>
+          <td>${statusBadge(ev.trangThai)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-info me-1" title="Xem chi tiết" onclick="viewEvent(${ev.id})">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-1" title="Chỉnh sửa" onclick="editEvent(${ev.id})">
+              <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="deleteEvent(${ev.id}, '${ev.tieuDe.replace(/'/g, "\\'")}')">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function showLoading(show) {
+      loadingOverlay.classList.toggle('show', show);
+    }
+
+    function showSuccess(message) {
+      alert(message); // Bạn có thể thay bằng toast notification
+    }
+
+    function showError(message) {
+      alert(message);
+    }
+
+    // ===========================
+    // Event Handlers
+    // ===========================
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(window.searchTimeout);
+      window.searchTimeout = setTimeout(() => fetchEvents(), 500);
+    });
+
+    document.getElementById('clearSearchBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      fetchEvents();
+    });
+
+    document.getElementById('filterType').addEventListener('change', fetchEvents);
+    document.getElementById('filterStatus').addEventListener('change', fetchEvents);
+
+    // Sorting
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (currentSort.key === key) {
+          currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.key = key;
+          currentSort.dir = 'asc';
+        }
+        fetchEvents();
+      });
+    });
+
+    // Modal
+    const eventModal = document.getElementById('eventModal');
+    eventModal.addEventListener('show.bs.modal', () => {
+      document.getElementById('formAlert').classList.add('d-none');
+    });
+
+    document.getElementById('btnAddEvent').addEventListener('click', () => {
+      document.getElementById('eventModalTitle').textContent = 'Tạo Sự kiện/Thông báo Mới';
+      document.getElementById('editingId').value = '';
+      document.getElementById('eventForm').reset();
+      enableForm(true);
+    });
+
+    document.getElementById('eventForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const startDate = document.getElementById('evtStartDate').value;
+      const startTime = document.getElementById('evtStartTime').value;
+      const endDate = document.getElementById('evtEndDate').value;
+      const endTime = document.getElementById('evtEndTime').value;
+
+      const eventData = {
+        tieuDe: document.getElementById('evtTitle').value.trim(),
+        loai: document.getElementById('evtType').value,
+        thoiGianBatDau: `${startDate} ${startTime}`,
+        thoiGianKetThuc: (endDate && endTime) ? `${endDate} ${endTime}` : null,
+        diaDiem: document.getElementById('evtLocation').value.trim() || null,
+        nguoiPhuTrach: document.getElementById('evtActor').value.trim() || null,
+        moTa: document.getElementById('evtDesc').value.trim() || null,
+        trangThai: document.getElementById('evtStatus').value
+      };
+
+      await saveEvent(eventData);
+    });
+
+    async function editEvent(id) {
+      try {
+        showLoading(true);
+        const response = await fetch(`${API_BASE}/${id}`);
+        if (!response.ok) throw new Error('Không tìm thấy sự kiện');
+        
+        const ev = await response.json();
+        
+        document.getElementById('eventModalTitle').textContent = 'Sửa Sự kiện/Thông báo';
+        document.getElementById('editingId').value = ev.id;
+        document.getElementById('evtTitle').value = ev.tieuDe || '';
+        document.getElementById('evtType').value = ev.loai || '';
+        document.getElementById('evtLocation').value = ev.diaDiem || '';
+        document.getElementById('evtActor').value = ev.nguoiPhuTrach || '';
+        document.getElementById('evtDesc').value = ev.moTa || '';
+        document.getElementById('evtStatus').value = ev.trangThai || '';
+
+        if (ev.thoiGianBatDau) {
+          const [date, time] = ev.thoiGianBatDau.split(' ');
+          const [yyyy, mm, dd] = date.split('-');
+          document.getElementById('evtStartDate').value = `${yyyy}-${mm}-${dd}`;
+          document.getElementById('evtStartTime').value = time || '';
+        }
+
+        if (ev.thoiGianKetThuc) {
+          const [date, time] = ev.thoiGianKetThuc.split(' ');
+          const [yyyy, mm, dd] = date.split('-');
+          document.getElementById('evtEndDate').value = `${yyyy}-${mm}-${dd}`;
+          document.getElementById('evtEndTime').value = time || '';
+        }
+
+        enableForm(true);
+        new bootstrap.Modal(eventModal).show();
+      } catch (error) {
+        console.error('Error loading event:', error);
+        showError('Không thể tải thông tin sự kiện');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function viewEvent(id) {
+      await editEvent(id);
+      document.getElementById('eventModalTitle').textContent = 'Xem Chi tiết Sự kiện/Thông báo';
+      enableForm(false);
+    }
+
+    function enableForm(enabled) {
+      const inputs = document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea');
+      inputs.forEach(input => input.disabled = !enabled);
+      document.getElementById('saveEventBtn').style.display = enabled ? 'block' : 'none';
+    }
+
+    // ===========================
+    // Navigation
+    // ===========================
+    function goTo(p) { window.location.href = p; }
+    function logout() { 
+      localStorage.removeItem('username'); 
+      window.location.href = '/'; 
+    }
+
+    // ===========================
+    // Initialize
+    // ===========================
+    document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('username') || 'admin';
+      document.getElementById('usernameDisplay').textContent = username;
+      fetchEvents();
+    });
+  </script>
+</body>
+</html>

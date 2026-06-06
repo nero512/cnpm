@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yêu cầu phê duyệt - Admin</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .sidebar { width: 250px; background-color: #0f3c3c; color: white; min-height: 100vh; padding: 20px; flex-shrink: 0; }
+    .sidebar .menu button { color: white; text-align: left; background: none; border: none; width:100%; padding:8px 12px; }
+    .sidebar .menu button:hover { background:#135353; border-radius:6px; }
+    .content { flex: 1; padding: 24px; min-height:100vh; background:#f9f9f9; overflow-x: auto; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    .stat-card { border-radius:12px; background:#fff; padding:16px; box-shadow:0 8px 30px rgba(20,30,60,0.06); transition:all .18s; }
+    .stat-card:hover { transform:translateY(-6px); box-shadow:0 22px 50px rgba(20,30,60,0.1); }
+    .table-wrap { background:#fff; padding:12px; border-radius:12px; box-shadow:0 8px 30px rgba(20,30,60,0.04); }
+    .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .loading-overlay.show { display: flex; }
+    .modal-body { max-height: 70vh; overflow-y: auto; }
+    @media (max-width: 768px) { .sidebar { display:none; } .content { padding:12px; } }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 36</h4>
+        <div class="menu">
+          <button onclick="goTo('admin_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button onclick="goTo('ad_quan_ly_ho_khau.html')" class="mb-2">QUẢN LÝ HỘ KHẨU</button>
+          <button onclick="goTo('ad_quan_ly_nhan_khau.html')" class="mb-2">QUẢN LÝ NHÂN KHẨU</button>
+          <button onclick="goTo('ad_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">
+            <i class="fa-solid fa-list-check me-2"></i>YÊU CẦU XỬ LÝ
+          </button>
+        </div>
+      </div>
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+          <div class="ms-2" id="usernameDisplay">Admin</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content flex-fill">
+      <div class="page-header mb-4">
+        <div>
+          <h3 class="mb-0">Yêu cầu phê duyệt</h3>
+          <small class="text-muted">Quản lý các yêu cầu do người dân gửi — duyệt hoặc từ chối kèm phản hồi.</small>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-muted">Đang xử lý</div>
+                <div id="statPending" class="fs-4 fw-bold">0</div>
+              </div>
+              <div><span class="badge bg-warning text-dark">Chờ</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-muted">Đã duyệt</div>
+                <div id="statApproved" class="fs-4 fw-bold">0</div>
+              </div>
+              <div><span class="badge bg-success">Đã duyệt</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="small text-muted">Từ chối</div>
+                <div id="statRejected" class="fs-4 fw-bold">0</div>
+              </div>
+              <div><span class="badge bg-danger">Từ chối</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+        <div>
+          <select id="filterStatus" class="form-select">
+            <option value="all">Tất cả</option>
+            <option value="Đang xử lý">Chờ xử lý</option>
+            <option value="Đã duyệt">Đã duyệt</option>
+            <option value="Không xử lý">Từ chối</option>
+          </select>
+        </div>
+        <div class="input-group" style="max-width:440px;">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input id="searchBox" type="search" class="form-control" placeholder="Tìm theo CCCD hoặc Tên...">
+        </div>
+        <div><button id="btnResetFilters" class="btn btn-outline-secondary">Đặt lại</button></div>
+        <div class="ms-auto"><button id="btnRefresh" class="btn btn-sm btn-primary">Tải lại</button></div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Mã yêu cầu</th>
+                <th>Số CCCD</th>
+                <th>Người gửi</th>
+                <th>Tiêu đề</th>
+                <th>Ngày gửi</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTbody">
+              <tr><td colspan="7" class="text-center py-3">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Process Request -->
+  <div class="modal fade" id="processModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="processForm" onsubmit="return false;">
+          <div class="modal-header">
+            <h5 class="modal-title">Xem & Xử lý Yêu cầu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <dl class="row">
+                  <dt class="col-sm-4">Mã Yêu cầu</dt><dd class="col-sm-8 font-monospace" id="m_req_code">—</dd>
+                  <dt class="col-sm-4">Ngày gửi</dt><dd class="col-sm-8" id="m_req_date">—</dd>
+                  <dt class="col-sm-4">Số CCCD</dt><dd class="col-sm-8" id="m_req_cccd">—</dd>
+                </dl>
+              </div>
+              <div class="col-md-6">
+                <dl class="row">
+                  <dt class="col-sm-4">Người gửi</dt><dd class="col-sm-8" id="m_req_sender">—</dd>
+                  <dt class="col-sm-4">Loại</dt><dd class="col-sm-8" id="m_req_type">—</dd>
+                  <dt class="col-sm-4">Trạng thái</dt><dd class="col-sm-8" id="m_req_status">—</dd>
+                </dl>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Tiêu đề</label>
+                <div class="p-2 border rounded bg-light" id="m_req_title">—</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Nội dung</label>
+                <div class="p-3 border rounded bg-light" id="m_req_content" style="min-height:60px;white-space:pre-wrap;">—</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Dữ liệu chi tiết (JSON)</label>
+                <pre class="p-2 border rounded bg-light small" id="m_req_data" style="max-height:200px;overflow-y:auto;">—</pre>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Phản hồi hiện có</label>
+                <div class="p-2 border rounded bg-white" id="m_req_feedback">—</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Phản hồi của Admin <span class="text-danger">*</span></label>
+                <textarea id="adminResponse" class="form-control" rows="4" placeholder="Nhập phản hồi (bắt buộc khi Duyệt hoặc Từ chối)"></textarea>
+                <div id="adminResponseWarn" class="form-text text-danger d-none">Phản hồi không được để trống.</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btnApprove" type="button" class="btn btn-success">Duyệt yêu cầu</button>
+            <button id="btnReject" type="button" class="btn btn-danger">Từ chối</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const username = localStorage.getItem('username') || 'Admin';
+    document.getElementById('usernameDisplay').textContent = username;
+
+    function goTo(page) { window.location.href = page; }
+    function logout() { localStorage.clear(); window.location.href = '../index.html'; }
+    function showLoading(show) { document.getElementById('loadingOverlay').classList.toggle('show', show); }
+
+    function formatDateTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const min = String(d.getMinutes()).padStart(2,'0');
+      return `${dd}/${mm}/${yy} ${hh}:${min}`;
+    }
+
+    function statusBadge(status) {
+      const badges = {
+        'Đang xử lý': '<span class="badge bg-warning text-dark">Đang xử lý</span>',
+        'Đã duyệt': '<span class="badge bg-success">Đã duyệt</span>',
+        'Không xử lý': '<span class="badge bg-danger">Từ chối</span>'
+      };
+      return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+    }
+
+    let currentRequestId = null;
+    const processModal = new bootstrap.Modal(document.getElementById('processModal'));
+
+    // Load stats
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/requests/stats/summary`);
+        const data = await res.json();
+        document.getElementById('statPending').textContent = data.pending || 0;
+        document.getElementById('statApproved').textContent = data.approved || 0;
+        document.getElementById('statRejected').textContent = data.rejected || 0;
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
+    // Load requests
+    async function loadRequests() {
+      try {
+        showLoading(true);
+        const status = document.getElementById('filterStatus').value;
+        const search = document.getElementById('searchBox').value.trim();
+        
+        const params = new URLSearchParams();
+        if (status !== 'all') params.append('status', status);
+        if (search) params.append('search', search);
+
+        const res = await fetch(`${API_BASE}/requests?${params}`);
+        const data = await res.json();
+        renderTable(data);
+        await loadStats();
+      } catch (err) {
+        console.error('Error loading requests:', err);
+        document.getElementById('requestsTbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Lỗi tải dữ liệu</td></tr>';
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('requestsTbody');
+      tbody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Không có yêu cầu phù hợp.</td></tr>';
+        return;
+      }
+
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="font-monospace small">${r.request_code}</td>
+          <td>${r.person_cccd}</td>
+          <td>${r.sender_name || '-'}</td>
+          <td>${r.title}</td>
+          <td>${formatDateTime(r.created_at)}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="openProcess(${r.request_id})">
+              <i class="fa-solid fa-eye me-1"></i> Xem & xử lý
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Open process modal
+    async function openProcess(id) {
+      try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/requests/${id}`);
+        if (!res.ok) throw new Error('Không tìm thấy yêu cầu');
+        
+        const req = await res.json();
+        currentRequestId = id;
+
+        document.getElementById('m_req_code').textContent = req.request_code;
+        document.getElementById('m_req_date').textContent = formatDateTime(req.created_at);
+        document.getElementById('m_req_cccd').textContent = req.person_cccd;
+        document.getElementById('m_req_sender').textContent = req.sender_name || '-';
+        document.getElementById('m_req_type').textContent = req.request_type;
+        document.getElementById('m_req_status').innerHTML = statusBadge(req.status);
+        document.getElementById('m_req_title').textContent = req.title || '-';
+        document.getElementById('m_req_content').textContent = req.content || '-';
+        document.getElementById('m_req_data').textContent = req.request_data ? 
+          (typeof req.request_data === 'string' ? req.request_data : JSON.stringify(req.request_data, null, 2)) : '-';
+        document.getElementById('m_req_feedback').textContent = req.admin_feedback || '-';
+
+        document.getElementById('adminResponse').value = '';
+        document.getElementById('adminResponseWarn').classList.add('d-none');
+
+        // Disable buttons if already processed
+        const isProcessed = req.status !== 'Đang xử lý';
+        document.getElementById('btnApprove').disabled = isProcessed;
+        document.getElementById('btnReject').disabled = isProcessed;
+        document.getElementById('adminResponse').disabled = isProcessed;
+
+        processModal.show();
+      } catch (err) {
+        console.error(err);
+        alert('Không thể tải thông tin yêu cầu');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Approve
+    document.getElementById('btnApprove').addEventListener('click', async () => {
+      const feedback = document.getElementById('adminResponse').value.trim();
+      if (!feedback) {
+        document.getElementById('adminResponseWarn').classList.remove('d-none');
+        return;
+      }
+
+      if (!confirm('Xác nhận DUYỆT yêu cầu này? Dữ liệu sẽ được tự động cập nhật vào hệ thống.')) return;
+
+      try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/requests/${currentRequestId}/approve`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_feedback: feedback })
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          alert('Lỗi: ' + result.error);
+          return;
+        }
+
+        alert('Đã duyệt yêu cầu thành công!');
+        processModal.hide();
+        await loadRequests();
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi kết nối server');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Reject
+    document.getElementById('btnReject').addEventListener('click', async () => {
+      const feedback = document.getElementById('adminResponse').value.trim();
+      if (!feedback) {
+        document.getElementById('adminResponseWarn').classList.remove('d-none');
+        return;
+      }
+
+      if (!confirm('Xác nhận TỪ CHỐI yêu cầu này?')) return;
+
+      try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/requests/${currentRequestId}/reject`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_feedback: feedback })
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          alert('Lỗi: ' + result.error);
+          return;
+        }
+
+        alert('Đã từ chối yêu cầu.');
+        processModal.hide();
+        await loadRequests();
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi kết nối server');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Filters
+    document.getElementById('filterStatus').addEventListener('change', loadRequests);
+    document.getElementById('searchBox').addEventListener('input', () => {
+      clearTimeout(window.searchTimeout);
+      window.searchTimeout = setTimeout(loadRequests, 500);
+    });
+    document.getElementById('btnResetFilters').addEventListener('click', () => {
+      document.getElementById('filterStatus').value = 'all';
+      document.getElementById('searchBox').value = '';
+      loadRequests();
+    });
+    document.getElementById('btnRefresh').addEventListener('click', loadRequests);
+
+    // Init
+    document.addEventListener('DOMContentLoaded', loadRequests);
+    window.openProcess = openProcess;
+  </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lịch Sinh Hoạt Cộng Đồng - Tổ Dân Phố</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .sidebar {
+      width: 250px;
+      background-color: #0f3c3c;
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+    .content { 
+        flex: 1; 
+        padding: 24px; 
+        min-height:100vh; 
+        background:#f9f9f9;
+        overflow-x: auto; 
+    }
+    .sidebar .menu button { 
+      color: white; 
+      text-align: left; 
+      background: none; 
+      border: none; 
+      width:100%; 
+      padding: 8px 12px;
+    }
+    .sidebar .menu button:hover { background:#135353; border-radius:6px;}
+
+    /* Title + controls */
+    .page-header { gap: 12px; align-items: center; display:flex; flex-wrap:wrap; justify-content:space-between; }
+    .header-left { display:flex; gap:12px; align-items:center; min-width:0; }
+    .person-title { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* Small helpers */
+    .filter-row { gap:12px; margin-top:12px; display:flex; flex-wrap:wrap; }
+    .table-wrap { margin-top:18px; }
+
+    /* Make headers indicate sortable */
+    th.sortable { cursor: pointer; user-select: none; }
+    th .sort-ind { font-size:0.85em; opacity:0.6; margin-left:6px; }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    /* small responsive tweaks */
+    @media (max-width: 1200px) {
+      .sidebar { width: 200px; }
+    }
+    @media (max-width: 992px) {
+      .sidebar { width: 160px; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 14</h4>
+        <div class="menu">
+          <button onclick="goTo('user_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button onclick="goTo('thong_tin_ca_nhan.html')" class="mb-2">THÔNG TIN CÁ NHÂN</button>
+          <button onclick="goTo('cap_nhat_thong_tin.html')" class="mb-2">CẬP NHẬT THÔNG TIN</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">LỊCH SINH HOẠT</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+          <div class="ms-2" id="usernameDisplay">Cư dân</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content flex-fill">
+      <!-- Header / Controls -->
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title" id="pageTitle">Lịch Sinh hoạt Cộng đồng Tổ Dân Phố 14</h3>
+            <small class="text-muted">Xem thông tin các sự kiện và hoạt động cộng đồng</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="filter-row align-items-center">
+        <div class="input-group" style="min-width:260px; flex:1; max-width:520px;">
+          <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input id="searchInput" class="form-control" placeholder="Tìm theo tiêu đề, nội dung hoặc người phụ trách...">
+          <button class="btn btn-outline-secondary" id="clearSearchBtn" title="Xóa">×</button>
+        </div>
+
+        <div class="d-flex gap-2">
+          <select id="filterType" class="form-select">
+            <option value="All">Tất cả loại</option>
+            <option value="Họp Tổ dân phố">Họp Tổ dân phố</option>
+            <option value="Hoạt động An ninh/Vệ sinh">Hoạt động An ninh/Vệ sinh</option>
+            <option value="Sự kiện Văn hóa/Thể thao">Sự kiện Văn hóa/Thể thao</option>
+            <option value="Thu phí/Đóng góp">Thu phí/Đóng góp</option>
+            <option value="Thông báo Khẩn cấp">Thông báo Khẩn cấp</option>
+          </select>
+
+          <select id="filterStatus" class="form-select">
+            <option value="All">Tất cả trạng thái</option>
+            <option value="Sắp diễn ra">Sắp diễn ra</option>
+            <option value="Đã tổ chức">Đã tổ chức</option>
+            <option value="Thông báo đang hiệu lực">Thông báo đang hiệu lực</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="eventsTable">
+            <thead class="table-light">
+              <tr>
+                <th class="sortable" data-key="thoi_gian_bat_dau">Ngày &amp; Giờ Bắt đầu <span class="sort-ind">▲▼</span></th>
+                <th class="sortable" data-key="loai">Loại Hoạt động</th>
+                <th class="sortable" data-key="tieu_de">Tiêu đề</th>
+                <th class="sortable" data-key="dia_diem">Địa điểm</th>
+                <th class="sortable" data-key="nguoi_phu_trach">Người Phụ trách</th>
+                <th class="sortable" data-key="trang_thai">Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTbody">
+              <tr>
+                <td colspan="7" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: View Event (Read-only) -->
+  <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Xem Chi tiết Sự kiện/Thông báo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Tiêu đề</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewTitle">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Loại Hoạt động</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewType">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Ngày &amp; Giờ Bắt đầu</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewStart">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Ngày &amp; Giờ Kết thúc</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewEnd">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Địa điểm</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewLocation">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Người Phụ trách</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewActor">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Nội dung Chi tiết</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewDesc" style="white-space: pre-wrap;">-</p>
+            </div>
+          </div>
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label fw-bold">Trạng thái</label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext" id="viewStatus">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api/events';
+    const tbody = document.getElementById('eventsTbody');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    let allEvents = [];
+    let currentSort = { key: 'thoi_gian_bat_dau', dir: 'desc' };
+
+    // ===========================
+    // API Functions
+    // ===========================
+    async function fetchEvents() {
+      try {
+        showLoading(true);
+        const params = new URLSearchParams();
+        
+        const search = document.getElementById('searchInput').value.trim();
+        const loai = document.getElementById('filterType').value;
+        const trangThai = document.getElementById('filterStatus').value;
+        
+        if (search) params.append('search', search);
+        if (loai !== 'All') params.append('loai', loai);
+        if (trangThai !== 'All') params.append('trangThai', trangThai);
+        if (currentSort.key) {
+          params.append('sortKey', currentSort.key);
+          params.append('sortDir', currentSort.dir);
+        }
+
+        const url = `${API_BASE}?${params.toString()}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error('Lỗi khi tải dữ liệu');
+        
+        allEvents = await response.json();
+        renderTable();
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Không thể tải dữ liệu. Vui lòng kiểm tra kết nối.</td></tr>';
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // ===========================
+    // UI Functions
+    // ===========================
+    function formatDateTime(dt) {
+      if (!dt) return '';
+      const d = new Date(dt);
+      if (isNaN(d.getTime())) return dt;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    function typeIcon(type) {
+      const icons = {
+        'Họp Tổ dân phố': '📣',
+        'Hoạt động An ninh/Vệ sinh': '🗑️',
+        'Sự kiện Văn hóa/Thể thao': '🎉',
+        'Thu phí/Đóng góp': '💰',
+        'Thông báo Khẩn cấp': '🚨'
+      };
+      return icons[type] || '📋';
+    }
+
+    function statusBadge(status) {
+      const badges = {
+        'Sắp diễn ra': '<span class="badge bg-warning text-dark">Sắp diễn ra</span>',
+        'Đã tổ chức': '<span class="badge bg-success">Đã tổ chức</span>',
+        'Thông báo đang hiệu lực': '<span class="badge bg-info text-dark">Thông báo đang hiệu lực</span>'
+      };
+      return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+    }
+
+    function renderTable() {
+      tbody.innerHTML = '';
+      
+      if (allEvents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Không có sự kiện nào</td></tr>';
+        return;
+      }
+
+      allEvents.forEach(ev => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="white-space:nowrap">${formatDateTime(ev.thoiGianBatDau)}</td>
+          <td>${typeIcon(ev.loai)} <span class="ms-1">${ev.loai}</span></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:bold" title="${ev.tieuDe}">${ev.tieuDe}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ev.diaDiem || ''}">${ev.diaDiem || '-'}</td>
+          <td>${ev.nguoiPhuTrach || '-'}</td>
+          <td>${statusBadge(ev.trangThai)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-info" title="Xem chi tiết" onclick="viewEvent(${ev.id})">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function showLoading(show) {
+      loadingOverlay.classList.toggle('show', show);
+    }
+
+    // ===========================
+    // Event Handlers
+    // ===========================
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(window.searchTimeout);
+      window.searchTimeout = setTimeout(() => fetchEvents(), 500);
+    });
+
+    document.getElementById('clearSearchBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      fetchEvents();
+    });
+
+    document.getElementById('filterType').addEventListener('change', fetchEvents);
+    document.getElementById('filterStatus').addEventListener('change', fetchEvents);
+
+    // Sorting
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (currentSort.key === key) {
+          currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.key = key;
+          currentSort.dir = 'asc';
+        }
+        fetchEvents();
+      });
+    });
+
+    // View Event (Read-only)
+    async function viewEvent(id) {
+      try {
+        showLoading(true);
+        const response = await fetch(`${API_BASE}/${id}`);
+        if (!response.ok) throw new Error('Không tìm thấy sự kiện');
+        
+        const ev = await response.json();
+        
+        document.getElementById('viewTitle').textContent = ev.tieuDe || '-';
+        document.getElementById('viewType').innerHTML = `${typeIcon(ev.loai)} ${ev.loai || '-'}`;
+        document.getElementById('viewStart').textContent = formatDateTime(ev.thoiGianBatDau) || '-';
+        document.getElementById('viewEnd').textContent = formatDateTime(ev.thoiGianKetThuc) || '-';
+        document.getElementById('viewLocation').textContent = ev.diaDiem || '-';
+        document.getElementById('viewActor').textContent = ev.nguoiPhuTrach || '-';
+        document.getElementById('viewDesc').textContent = ev.moTa || '-';
+        document.getElementById('viewStatus').innerHTML = statusBadge(ev.trangThai);
+
+        new bootstrap.Modal(document.getElementById('eventModal')).show();
+      } catch (error) {
+        console.error('Error loading event:', error);
+        alert('Không thể tải thông tin sự kiện');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // ===========================
+    // Navigation
+    // ===========================
+    function goTo(p) { window.location.href = p; }
+    function logout() { 
+      localStorage.removeItem('username'); 
+      window.location.href = '/'; 
+    }
+
+    // ===========================
+    // Initialize
+    // ===========================
+    document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('username') || 'Cư dân';
+      document.getElementById('usernameDisplay').textContent = username;
+      fetchEvents();
+    });
+  </script>
+</body>
+</html>

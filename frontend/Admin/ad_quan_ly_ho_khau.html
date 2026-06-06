@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quản lý Hộ khẩu – Master-Detail</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root{--accent:#0d6efd;--muted-bg:#f6f9fb;--card-radius:12px;--soft-shadow: 0 6px 18px rgba(18,38,63,0.06);}
+    body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:#f4f7fb; }
+    .sidebar {width: 250px;background-color: #0f3c3c;color: white;min-height: 100vh;padding: 20px;flex-shrink: 0;}
+    .sidebar .menu button { color: white; text-align: left; background: none; border: none; width:100%; padding:8px 12px;}
+    .sidebar .menu button:hover { background:#135353; border-radius:6px; }
+    .sidebar h4{ font-weight:700; letter-spacing:0.6px; }
+    .content{ flex: 1;padding: 28px;background: transparent;min-height:100vh;}
+    .page-header { gap: 12px; align-items: center; display:flex; flex-wrap:wrap; justify-content:space-between; margin-bottom:10px; }
+    .header-left h3 { margin:0; font-weight:700; }
+    .person-title small { display:block; color:#6b7280; }
+    .btn-primary-giant {background-color:var(--accent);border-color:var(--accent);color:white;padding:10px 16px;font-weight:600;display:flex;gap:8px;align-items:center;border-radius:10px;box-shadow: var(--soft-shadow);}
+    .card-table {border-radius: var(--card-radius);overflow: hidden;box-shadow: var(--soft-shadow);background:white;}
+    table thead th { background: #fbfdff; }
+    table th, table td { vertical-align: middle; }
+    .household-code {font-weight:700;color:var(--accent);}
+    .count-badge {font-weight:600;}
+    .modal-content {border-radius: 14px;box-shadow: var(--soft-shadow);overflow: visible;}
+    .modal-header .modal-title { font-weight:700; }
+    .household-card {background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);border-radius:12px;padding:14px;box-shadow: 0 4px 14px rgba(15,60,60,0.04);margin-bottom:12px;}
+    .form-control, .form-select {border-radius: 10px;padding: 10px 12px;}
+    .btn {border-radius: 10px;}
+    .loading-overlay {position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0,0,0,0.3);display: none;align-items: center;justify-content: center;z-index: 9999;}
+    .loading-overlay.active { display: flex; }
+    @media (max-width: 768px) {.sidebar { display:none; }.content { padding:12px; }}
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status"><span class="visually-hidden">Loading...</span></div>
+  </div>
+
+  <div class="d-flex">
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 14</h4>
+        <div class="menu">
+          <button onclick="goTo('admin_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">QUẢN LÝ HỘ KHẨU</button>
+          <button onclick="goTo('ad_quan_ly_nhan_khau.html')" class="mb-2">QUẢN LÝ NHÂN KHẨU</button>
+          <button onclick="goTo('ad_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+          <button onclick="goTo('admin_yeu_cau_xu_ly.html')" class="mb-2">YÊU CẦU XỬ LÝ</button>
+        </div>
+      </div>
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/%3E%3C/svg%3E'" />
+          <div class="ms-2" id="usernameDisplay">Quản lý</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content flex-fill">
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="card" style="border-radius:12px; box-shadow:var(--soft-shadow);">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Tổng số Hộ khẩu</h6>
+              <p class="card-text fs-3" id="statHouseholds">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card" style="border-radius:12px; box-shadow:var(--soft-shadow);">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Tổng số Thành viên</h6>
+              <p class="card-text fs-3" id="statMembers">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card" style="border-radius:12px; box-shadow:var(--soft-shadow);">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Hộ trung bình / hộ</h6>
+              <p class="card-text fs-3" id="statAvg">—</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card" style="border-radius:12px; box-shadow:var(--soft-shadow);">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Khu vực hiện tại</h6>
+              <p class="card-text fs-6" id="statArea">Tất cả</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title">Quản lý Hộ khẩu</h3>
+            <small class="text-muted">Danh sách Hộ khẩu – Xem chi tiết, quản lý thành viên, chỉnh sửa</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <button id="btnAddHousehold" class="btn btn-primary-giant" data-bs-toggle="modal" data-bs-target="#householdAddModal">
+            <i class="fa-solid fa-plus"></i> <span>Thêm Hộ khẩu</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+        <div class="input-group" style="min-width:260px; flex:1; max-width:680px;">
+          <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input id="searchInput" class="form-control" placeholder="Tìm theo Mã Hộ, Chủ Hộ, Địa chỉ..." />
+          <button class="btn btn-outline-secondary" id="clearSearchBtn" title="Xóa">×</button>
+        </div>
+      </div>
+
+      <div class="card-table">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="householdsTable">
+            <thead class="table-light">
+              <tr>
+                <th>Mã Hộ</th>
+                <th>Số Hộ Khẩu</th>
+                <th>Chủ Hộ</th>
+                <th>Địa chỉ</th>
+                <th>Số lượng thành viên</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="householdsTbody">
+              <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- PHẦN 1: MODAL THÊM/SỬA HỘ KHẨU -->
+  <div class="modal fade" id="householdAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <form id="householdForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="householdFormTitle">Thêm Hộ khẩu mới</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editingHouseholdId" value="" />
+          <div class="mb-3">
+            <label class="form-label">Số Hộ Khẩu <span class="text-danger">*</span></label>
+            <input id="so_ho_khau" class="form-control" required placeholder="VD: HK001" />
+          </div>
+          <h6 class="mt-4 mb-3">Thông tin Chủ hộ</h6>
+          <div class="mb-3">
+            <label class="form-label">Số CCCD Chủ hộ <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input id="chu_ho_cccd" class="form-control" required maxlength="12" placeholder="012345678901" />
+              <button type="button" class="btn btn-outline-secondary" id="btnCheckCCCD">Kiểm tra</button>
+            </div>
+            <small class="text-muted">Nhập CCCD và nhấn "Kiểm tra" để tự động điền thông tin nếu đã tồn tại</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Họ và Tên Chủ hộ <span class="text-danger">*</span></label>
+            <input id="ho_ten" class="form-control" required />
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Giới tính <span class="text-danger">*</span></label>
+              <select id="gioi_tinh" class="form-select" required>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+              <input id="ngay_sinh" type="date" class="form-control" required />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Dân tộc</label>
+              <input id="dan_toc" class="form-control" value="Kinh" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Tôn giáo</label>
+              <input id="ton_giao" class="form-control" value="Không" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Quốc tịch</label>
+            <input id="quoc_tich" class="form-control" value="Việt Nam" />
+          </div>
+          <h6 class="mt-4 mb-3">Địa chỉ thường trú</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Số nhà</label>
+              <input id="so_nha" class="form-control" placeholder="VD: 12/3" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Đường phố</label>
+              <input id="duong_pho" class="form-control" placeholder="VD: Đường ABC" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phường/Xã</label>
+              <input id="phuong_xa" class="form-control" placeholder="VD: Phường XYZ" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Quận/Huyện</label>
+              <input id="quan_huyen" class="form-control" placeholder="VD: Quận 1" />
+            </div>
+          </div>
+          <div id="formAlertHousehold" class="alert alert-danger d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" id="saveHouseholdBtn" class="btn btn-primary">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PHẦN 2: MODAL CHI TIẾT HỘ KHẨU -->
+  <div class="modal fade" id="householdDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Chi tiết Hộ khẩu</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="householdHeaderCard" class="household-card d-flex flex-column flex-md-row justify-content-between align-items-start gap-2">
+            <div>
+              <div><span class="text-muted small">Số Hộ Khẩu</span></div>
+              <div id="detailSoHoKhau" class="household-code fs-5">—</div>
+            </div>
+            <div>
+              <div><span class="text-muted small">Chủ Hộ</span></div>
+              <div id="detailHeadName" class="fs-5">—</div>
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <div><span class="text-muted small">Địa chỉ</span></div>
+              <div id="detailAddress" class="text-muted small">—</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Thành viên trong hộ</h6>
+            <div>
+              <button id="toggleAddMemberBtn" class="btn btn-sm btn-outline-primary me-2"><i class="fa-solid fa-user-plus"></i> Thêm thành viên</button>
+              <button id="editHouseholdFromDetailBtn" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen-to-square"></i> Sửa Hộ</button>
+            </div>
+          </div>
+
+          <div id="addMemberContainer" class="card mb-3 d-none" style="border-radius:10px;">
+            <div class="card-body">
+              <form id="addMemberForm" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label class="form-label small">CCCD <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm">
+                    <input id="m_cccd" class="form-control" maxlength="12" placeholder="012345678901" required />
+                    <button type="button" class="btn btn-outline-secondary" id="btnCheckMemberCCCD">Kiểm tra</button>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Họ và Tên <span class="text-danger">*</span></label>
+                  <input id="m_ho_ten" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Quan hệ <span class="text-danger">*</span></label>
+                  <select id="m_quan_he" class="form-select" required>
+                    <option>Vợ/Chồng</option>
+                    <option>Con</option>
+                    <option>Cha/Mẹ</option>
+                    <option>Anh/Chị/Em</option>
+                    <option>Khác</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Ngày sinh</label>
+                  <input id="m_ngay_sinh" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Giới tính</label>
+                  <select id="m_gioi_tinh" class="form-select">
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Dân tộc</label>
+                  <input id="m_dan_toc" class="form-control" value="Kinh" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Tôn giáo</label>
+                  <input id="m_ton_giao" class="form-control" value="Không" />
+                </div>
+                <div class="col-12 text-end">
+                  <div id="addMemberAlert" class="text-danger small d-none mb-2"></div>
+                  <button type="button" class="btn btn-secondary btn-sm me-2" onclick="cancelAddMember()">Hủy</button>
+                  <button type="submit" class="btn btn-primary btn-sm">Thêm vào hộ</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle" id="membersTable">
+              <thead class="table-light">
+                <tr>
+                  <th>CCCD</th>
+                  <th>Họ và Tên</th>
+                  <th>Ngày sinh</th>
+                  <th>Giới tính</th>
+                  <th>Quan hệ</th>
+                  <th>Dân tộc</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="membersTbody">
+                <tr><td colspan="7" class="text-center">Chưa có thành viên</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- PHẦN 3: JAVASCRIPT -->
+  <script src="household_script.js"></script>
+  <script src="household_members.js"></script>
+</body>
+</html>

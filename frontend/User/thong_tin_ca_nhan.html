@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thông tin cá nhân</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #0f3c3c;
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px;
+      background: #f9f9f9;
+      overflow-x: auto;
+    }
+
+    .sidebar .menu button {
+      color: white;
+      text-align: left;
+      background: none;
+      border: none;
+      width: 100%;
+      padding: 8px 12px;
+    }
+
+    .sidebar .menu button:hover {
+      background: #135353;
+      border-radius: 6px;
+    }
+
+    .page-header {
+      gap: 12px;
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .person-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Card style: modern with hover shadow */
+    .utility-cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .utility-card {
+      cursor: pointer;
+      flex: 1 1 420px;
+      min-height: 160px;
+      border-radius: 14px;
+      padding: 22px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      box-shadow: 0 6px 20px rgba(15, 60, 60, 0.06);
+      transition: transform .18s ease, box-shadow .18s ease;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .utility-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(15, 60, 60, 0.12);
+    }
+
+    .utility-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: #fff;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+      box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .utility-body {
+      flex: 1;
+    }
+
+    .utility-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .utility-sub {
+      color: #6c757d;
+      font-size: 0.95rem;
+    }
+
+    .card-badge {
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .info-label {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    .info-value {
+      font-weight: 600;
+    }
+
+    .member-table thead th {
+      font-size: 0.9rem;
+    }
+
+    .member-table tbody td {
+      vertical-align: middle;
+    }
+
+    .small-muted {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    @media (max-width: 900px) {
+      .utility-card {
+        flex-basis: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .content {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 14</h4>
+        <div class="menu">
+          <button onclick="goTo('user_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">THÔNG TIN CÁ NHÂN</button>
+          <button onclick="goTo('cap_nhat_thong_tin.html')" class="mb-2">CẬP NHẬT THÔNG TIN</button>
+          <button onclick="goTo('user_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2218%22 fill=%22%23666%22%3E?%3C/text%3E%3C/svg%3E'" />
+          <div class="ms-2" id="usernameDisplay">Cư dân</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content flex-fill">
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title">Thông tin cá nhân</h3>
+            <small class="person-title text-muted">Bảng điều khiển nhanh – mở thẻ để xem chi tiết</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="container my-4">
+          <!-- Profile summary -->
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <img id="avatarImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84'%3E%3Crect fill='%23e9ecef' width='84' height='84'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23495057'%3E👤%3C/text%3E%3C/svg%3E" 
+              alt="avatar" class="rounded" style="width:84px;height:84px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,0.06)">
+            <div>
+              <h4 id="fullName" class="mb-0">Đang tải...</h4>
+              <div class="small-muted" id="cccdShort">CCCD: ...</div>
+            </div>
+          </div>
+
+          <!-- Utility cards row -->
+          <div class="utility-cards mb-4">
+            <!-- Card 1: Thẻ CCCD -->
+            <div class="utility-card" id="card-cccd" role="button" data-bs-toggle="modal" data-bs-target="#modalCCCD">
+              <div class="utility-icon"><i class="fa-solid fa-id-card"></i></div>
+              <div class="utility-body">
+                <div class="utility-title">Thẻ CCCD</div>
+                <div class="utility-sub">Xem mã số và thông tin nhận dạng</div>
+              </div>
+              <div class="ms-auto">
+                <div class="card-badge bg-light text-muted">Chi tiết</div>
+              </div>
+            </div>
+
+            <!-- Card 2: Thông tin cư trú -->
+            <div class="utility-card" id="card-cutru" role="button" data-bs-toggle="modal" data-bs-target="#modalCuTru">
+              <div class="utility-icon" style="background:linear-gradient(135deg,#0ea5a5,#0b7285)"><i
+                  class="fa-solid fa-house"></i></div>
+              <div class="utility-body">
+                <div class="utility-title">Thông tin cư trú</div>
+                <div class="utility-sub">Nơi thường trú và thông tin hộ gia đình</div>
+              </div>
+              <div class="ms-auto">
+                <div class="card-badge bg-light text-muted">Quản lý</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hint -->
+          <div class="mb-3">
+            <small class="small-muted">Nhấn vào từng thẻ để mở popup chi tiết</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Thẻ CCCD -->
+      <div class="modal fade" id="modalCCCD" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-id-card me-2"></i> Thẻ Căn cước công dân (CCCD)</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-12">
+                  <div class="p-3 rounded" style="background:linear-gradient(90deg,#eef7ff,#ffffff); border:1px solid rgba(13,110,253,0.06);">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="info-label">Số CCCD</div>
+                        <div class="info-value" id="cccd_number">-</div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="info-label">Họ và tên</div>
+                        <div class="info-value" id="cccd_name">-</div>
+                      </div>
+
+                      <div class="col-md-6 mt-3">
+                        <div class="info-label">Ngày sinh</div>
+                        <div class="info-value" id="cccd_dob">-</div>
+                      </div>
+                      <div class="col-md-6 mt-3">
+                        <div class="info-label">Giới tính</div>
+                        <div class="info-value" id="cccd_gender">-</div>
+                      </div>
+
+                      <div class="col-md-6 mt-3">
+                        <div class="info-label">Dân tộc</div>
+                        <div class="info-value" id="cccd_danToc">-</div>
+                      </div>
+                      <div class="col-md-6 mt-3">
+                        <div class="info-label">Tôn giáo</div>
+                        <div class="info-value" id="cccd_tonGiao">-</div>
+                      </div>
+
+                      <div class="col-md-6 mt-3">
+                        <div class="info-label">Quốc tịch</div>
+                        <div class="info-value" id="cccd_national">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3">
+                        <div class="info-label">Nơi thường trú</div>
+                        <div class="info-value" id="cccd_thuongTru">-</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Thông tin cư trú -->
+      <div class="modal fade" id="modalCuTru" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-house me-2"></i> Thông tin cư trú</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <div class="container-fluid">
+                <div class="row">
+                  <!-- Phần 1: Thông tin hành chính -->
+                  <div class="col-lg-6 col-md-12">
+                    <h6 class="mb-3">Thông tin hành chính</h6>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <div class="info-label">Họ và tên</div>
+                        <div class="info-value" id="ct_name">-</div>
+                      </div>
+                      <div class="col-6">
+                        <div class="info-label">Số CCCD</div>
+                        <div class="info-value" id="ct_cccd">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Giới tính</div>
+                        <div class="info-value" id="ct_gender">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Ngày sinh</div>
+                        <div class="info-value" id="ct_dob">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Dân tộc</div>
+                        <div class="info-value" id="ct_danToc">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Tôn giáo</div>
+                        <div class="info-value" id="ct_tonGiao">-</div>
+                      </div>
+
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Quốc tịch</div>
+                        <div class="info-value" id="ct_quocTich">-</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Phần 2: Thông tin cư trú -->
+                  <div class="col-lg-6 col-md-12">
+                    <h6 class="mb-3">Thông tin hộ khẩu</h6>
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <div class="info-label">Số hộ khẩu</div>
+                        <div class="info-value" id="ct_soHoKhau">-</div>
+                      </div>
+                      <div class="col-12 mt-2">
+                        <div class="info-label">Địa chỉ hộ khẩu</div>
+                        <div class="info-value" id="ct_diaChiHoKhau">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3">
+                        <hr>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="info-label">Họ tên chủ hộ</div>
+                        <div class="info-value" id="ct_chuHo">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Số định danh chủ hộ</div>
+                        <div class="info-value" id="ct_chuHo_cccd">-</div>
+                      </div>
+                      <div class="col-6 mt-2">
+                        <div class="info-label">Quan hệ với chủ hộ</div>
+                        <div class="info-value" id="ct_quanHeChuHo">-</div>
+                      </div>
+
+                      <div class="col-12 mt-3 d-flex justify-content-end">
+                        <button id="btnViewMembers" class="btn btn-outline-primary">Xem thành viên khác trong hộ gia đình</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Thành viên hộ gia đình -->
+      <div class="modal fade" id="modalMembers" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="fa-solid fa-users me-2"></i> Thành viên trong hộ gia đình</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover member-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Họ và tên</th>
+                      <th>Số CCCD</th>
+                      <th>Ngày sinh</th>
+                      <th>Giới tính</th>
+                      <th>Quan hệ</th>
+                      <th>Dân tộc</th>
+                    </tr>
+                  </thead>
+                  <tbody id="membersTbody">
+                    <tr><td colspan="7" class="text-center">Chưa có dữ liệu</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    let personData = null;
+    let householdData = null;
+
+    // ===========================
+    // API Functions
+    // ===========================
+    async function fetchPersonInfo(cccd) {
+      try {
+        showLoading(true);
+        const response = await fetch(`${API_BASE}/persons/${cccd}`);
+        if (!response.ok) throw new Error('Không thể tải thông tin cá nhân');
+        personData = await response.json();
+        renderPersonInfo();
+      } catch (error) {
+        console.error('Error fetching person:', error);
+        alert('Không thể tải thông tin cá nhân. Vui lòng thử lại.');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function fetchHouseholdInfo(cccd) {
+      try {
+        showLoading(true);
+        const response = await fetch(`${API_BASE}/household/by-member/${cccd}`);
+        if (!response.ok) {
+          console.warn('Không tìm thấy thông tin hộ khẩu');
+          return;
+        }
+        householdData = await response.json();
+        renderHouseholdInfo();
+      } catch (error) {
+        console.error('Error fetching household:', error);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // ===========================
+    // Render Functions
+    // ===========================
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function renderPersonInfo() {
+      if (!personData) return;
+
+      // Summary
+      document.getElementById('fullName').textContent = personData.name || '-';
+      document.getElementById('cccdShort').textContent = `CCCD: ${personData.cccd || '-'}`;
+
+      // Modal CCCD
+      document.getElementById('cccd_number').textContent = personData.cccd || '-';
+      document.getElementById('cccd_name').textContent = personData.name || '-';
+      document.getElementById('cccd_dob').textContent = formatDate(personData.ngaySinh);
+      document.getElementById('cccd_gender').textContent = personData.gioiTinh || '-';
+      document.getElementById('cccd_danToc').textContent = personData.danToc || '-';
+      document.getElementById('cccd_tonGiao').textContent = personData.tonGiao || '-';
+      document.getElementById('cccd_national').textContent = personData.quocTich || '-';
+      document.getElementById('cccd_thuongTru').textContent = personData.diaChi || '-';
+
+      // Modal Cư trú (phần person)
+      document.getElementById('ct_name').textContent = personData.name || '-';
+      document.getElementById('ct_cccd').textContent = personData.cccd || '-';
+      document.getElementById('ct_gender').textContent = personData.gioiTinh || '-';
+      document.getElementById('ct_dob').textContent = formatDate(personData.ngaySinh);
+      document.getElementById('ct_danToc').textContent = personData.danToc || '-';
+      document.getElementById('ct_tonGiao').textContent = personData.tonGiao || '-';
+      document.getElementById('ct_quocTich').textContent = personData.quocTich || '-';
+    }
+
+    function renderHouseholdInfo() {
+      if (!householdData) {
+        document.getElementById('ct_soHoKhau').textContent = 'Chưa có thông tin';
+        return;
+      }
+
+      // Modal Cư trú (phần household)
+      document.getElementById('ct_soHoKhau').textContent = householdData.so_ho_khau || '-';
+      document.getElementById('ct_diaChiHoKhau').textContent = householdData.dia_chi || '-';
+      document.getElementById('ct_chuHo').textContent = householdData.ten_chu_ho || '-';
+      document.getElementById('ct_chuHo_cccd').textContent = householdData.chu_ho_cccd || '-';
+
+      // Tìm quan hệ của user hiện tại
+      const userCCCD = localStorage.getItem('person_cccd');
+      const currentMember = householdData.members?.find(m => m.cccd === userCCCD);
+      document.getElementById('ct_quanHeChuHo').textContent = currentMember?.quan_he || '-';
+
+      // Prepare members table
+      renderMembers();
+    }
+
+    function renderMembers() {
+      const tbody = document.getElementById('membersTbody');
+      tbody.innerHTML = '';
+
+      if (!householdData || !householdData.members || householdData.members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không có thành viên nào</td></tr>';
+        return;
+      }
+
+      householdData.members.forEach((m, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${m.ho_ten || '-'}</td>
+          <td>${m.cccd || '-'}</td>
+          <td>${formatDate(m.ngay_sinh)}</td>
+          <td>${m.gioi_tinh || '-'}</td>
+          <td>${m.quan_he || '-'}</td>
+          <td>${m.dan_toc || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function showLoading(show) {
+      loadingOverlay.classList.toggle('show', show);
+    }
+
+    // ===========================
+    // Event Handlers
+    // ===========================
+    document.getElementById('btnViewMembers').addEventListener('click', () => {
+      const membersModal = new bootstrap.Modal(document.getElementById('modalMembers'));
+      membersModal.show();
+    });
+
+    // ===========================
+    // Navigation
+    // ===========================
+    function goTo(p) { window.location.href = p; }
+    function logout() { 
+      localStorage.clear();
+      window.location.href = '../index.html';
+    }
+
+    // ===========================
+    // Initialize
+    // ===========================
+    document.addEventListener('DOMContentLoaded', async () => {
+      const username = localStorage.getItem('username');
+      const userCCCD = localStorage.getItem('person_cccd');
+
+      if (!userCCCD) {
+        alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+        logout();
+        return;
+      }
+
+      document.getElementById('usernameDisplay').textContent = username || 'Cư dân';
+
+      // Load data
+      await fetchPersonInfo(userCCCD);
+      await fetchHouseholdInfo(userCCCD);
+    });
+  </script>
+</body>
+
+</html>

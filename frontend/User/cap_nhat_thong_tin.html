@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cập nhật thông tin</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a2d9b6f9a6.js" crossorigin="anonymous"></script>
+
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background:#f4f6f8; }
+    .sidebar { width: 250px; background-color: #0f3c3c; color: white; min-height: 100vh; padding: 20px; flex-shrink: 0; }
+    .sidebar .menu button { color: white; text-align: left; background: none; border: none; width:100%; padding: 8px 12px; }
+    .sidebar .menu button:hover { background:#135353; border-radius:6px; }
+    .content { flex: 1; padding: 24px; min-height:100vh; background:#f9f9f9; overflow-x: auto; }
+    .page-header { gap: 12px; align-items: center; display:flex; flex-wrap:wrap; justify-content:space-between; margin-bottom: 24px; }
+    .card.shadow-utility { border-radius: 12px; transition: transform .18s ease, box-shadow .18s ease; box-shadow: 0 6px 18px rgba(20,30,50,0.06); overflow: hidden; }
+    .btn-create { min-width: 220px; border-radius: 10px; font-weight:600; }
+    .readonly-field { background:#f8f9fa; border:1px solid #e9ecef; padding:10px 12px; border-radius:6px; }
+    .change-input { display:none; margin-top:8px; }
+    .form-section-title { font-size: 0.95rem; font-weight: 700; color: #0f3c3c; border-bottom: 2px solid #e9ecef; padding-bottom: 5px; margin-top: 15px; margin-bottom: 10px; }
+    .required-asterisk { color: red; margin-left: 3px; }
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+    .loading-overlay.show { display: flex; }
+    @media (max-width: 768px) { .sidebar { display: none; } .content { padding: 12px; } }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+  </div>
+
+  <div class="d-flex">
+    <aside class="sidebar d-flex flex-column justify-content-between">
+      <div>
+        <h4 class="mb-4">NHÓM 14</h4>
+        <div class="menu">
+          <button onclick="goTo('user_home.html')" class="mb-2">TRANG CHỦ</button>
+          <button onclick="goTo('thong_tin_ca_nhan.html')" class="mb-2">THÔNG TIN CÁ NHÂN</button>
+          <button style="background:#135353; border-radius:6px;" class="mb-2">CẬP NHẬT THÔNG TIN</button>
+          <button onclick="goTo('user_lich_sinh_hoat.html')" class="mb-2">LỊCH SINH HOẠT</button>
+        </div>
+      </div>
+      <div>
+        <div class="d-flex align-items-center mb-2" onclick="logout()" style="cursor:pointer">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span>Đăng xuất</span>
+        </div>
+        <div class="d-flex align-items-center profile">
+          <img src="/avatar.jpg" alt="avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/%3E%3C/svg%3E'"/>
+          <div class="ms-2" id="usernameDisplay">username</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content flex-fill">
+      <div class="page-header">
+        <div class="header-left">
+          <div>
+            <h3 class="mb-0 person-title">Cập nhật thông tin & Dịch vụ công</h3>
+            <small class="text-muted">Gửi yêu cầu chỉnh sửa thông tin và theo dõi trạng thái xử lý</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="card shadow-utility mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0 py-2"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Gửi Yêu cầu Mới</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-column align-items-start gap-2">
+              <p class="muted-sm mb-2">Để tạo yêu cầu điều chỉnh thông tin, nhấn vào nút bên dưới.</p>
+              <button id="openCreateBtn" class="btn btn-primary btn-create">
+                <i class="fa-solid fa-plus me-2"></i> Tạo mới yêu cầu
+              </button>
+              <div id="pageAlert" class="mt-3 d-none alert" role="alert"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-utility">
+          <div class="card-header bg-white">
+             <h5 class="mb-0 py-2"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử Yêu cầu của Tôi</h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="historyTable">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">Mã Yêu cầu</th>
+                    <th>Ngày gửi</th>
+                    <th>Tiêu đề</th>
+                    <th>Trạng thái</th>
+                    <th class="pe-3">Phản hồi từ Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTbody">
+                  <tr><td colspan="5" class="text-center py-3">Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Tạo yêu cầu -->
+  <div class="modal fade" id="editInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <form id="modalForm" class="modal-content" onsubmit="return false;">
+          <div class="modal-header">
+            <h5 class="modal-title">Yêu cầu điều chỉnh thông tin</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3 p-3 bg-light rounded border">
+              <label class="form-label fw-bold mb-2">Đối tượng yêu cầu:</label>
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="targetRadio" id="targetSelf" value="self" checked>
+                  <label class="form-check-label fw-semibold" for="targetSelf">Bản thân (Điều chỉnh)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="targetRadio" id="targetBehalf" value="behalf">
+                  <label class="form-check-label fw-semibold" for="targetBehalf">Khai hộ (Thêm mới/Thay mặt)</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Điều chỉnh thông tin -->
+            <div id="selfUpdateForm">
+                <div class="mb-3">
+                  <label class="form-label fw-bold text-secondary">Thông tin hiện tại của bạn</label>
+                  <div class="row g-2">
+                    <div class="col-md-6"><div class="readonly-field"><div class="small text-muted">Họ và tên</div><div id="ro_name" class="fw-semibold">-</div></div></div>
+                    <div class="col-md-6"><div class="readonly-field"><div class="small text-muted">Ngày sinh</div><div id="ro_dob" class="fw-semibold">-</div></div></div>
+                    <div class="col-md-6"><div class="readonly-field"><div class="small text-muted">Giới tính</div><div id="ro_gender" class="fw-semibold">-</div></div></div>
+                    <div class="col-md-6"><div class="readonly-field"><div class="small text-muted">Số CCCD</div><div id="ro_cccd" class="fw-semibold">-</div></div></div>
+                    <div class="col-12"><div class="readonly-field"><div class="small text-muted">Nơi cư trú</div><div id="ro_address" class="fw-semibold">-</div></div></div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Chọn thông tin cần thay đổi</label>
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input change-checkbox" type="checkbox" id="chk_name" data-target="input_name">
+                        <label class="form-check-label" for="chk_name">Họ tên</label>
+                      </div>
+                      <input type="text" id="input_name" class="form-control change-input" placeholder="Họ và tên mới">
+                    </div>
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input change-checkbox" type="checkbox" id="chk_gender" data-target="input_gender">
+                        <label class="form-check-label" for="chk_gender">Giới tính</label>
+                      </div>
+                      <select id="input_gender" class="form-select change-input">
+                        <option value="">-- Chọn giới tính mới --</option>
+                        <option>Nam</option><option>Nữ</option><option>Khác</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input change-checkbox" type="checkbox" id="chk_nationality" data-target="input_nationality">
+                        <label class="form-check-label" for="chk_nationality">Quốc tịch</label>
+                      </div>
+                      <input type="text" id="input_nationality" class="form-control change-input" placeholder="Quốc tịch mới">
+                    </div>
+                    <div class="col-12">
+                      <div class="form-check">
+                        <input class="form-check-input change-checkbox" type="checkbox" id="chk_religion" data-target="input_religion">
+                        <label class="form-check-label" for="chk_religion">Tôn giáo</label>
+                      </div>
+                      <input type="text" id="input_religion" class="form-control change-input" placeholder="Tôn giáo mới">
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+            <!-- Form Khai hộ -->
+            <div id="behalfDeclarationForm" class="d-none">
+                <div class="alert alert-info small py-2">
+                    <i class="fa-solid fa-circle-info me-1"></i> Vui lòng điền đầy đủ thông tin của người được khai hộ. Các trường có dấu <span class="text-danger">*</span> là bắt buộc.
+                </div>
+
+                <div class="form-section-title">1. Thông tin Nhân thân</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Họ và Tên <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control bh-input" id="bh_name" placeholder="Nhập họ tên đầy đủ">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày sinh <span class="required-asterisk">*</span></label>
+                        <input type="date" class="form-control bh-input" id="bh_dob">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Giới tính <span class="required-asterisk">*</span></label>
+                        <select class="form-select bh-input" id="bh_gender">
+                            <option value="">-- Chọn --</option>
+                            <option>Nam</option><option>Nữ</option><option>Khác</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mã định danh / CCCD <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control bh-input" id="bh_cccd" placeholder="Số CCCD/ĐDCN" maxlength="12">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Dân tộc</label>
+                        <input type="text" class="form-control bh-input" id="bh_ethnicity" placeholder="Kinh, Tày..." value="Kinh">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tôn giáo</label>
+                        <input type="text" class="form-control bh-input" id="bh_religion" placeholder="Không, Phật giáo..." value="Không">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Quốc tịch</label>
+                        <input type="text" class="form-control bh-input" id="bh_nationality" value="Việt Nam">
+                    </div>
+                </div>
+
+                <div class="form-section-title">2. Thông tin Cư trú</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Địa chỉ Thường trú <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control bh-input" id="bh_address" placeholder="Số nhà, đường, phường/xã, quận/huyện...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Quan hệ với Chủ hộ <span class="required-asterisk">*</span></label>
+                        <select class="form-select bh-input" id="bh_relation">
+                            <option value="">-- Chọn quan hệ --</option>
+                            <option>Chủ hộ</option>
+                            <option>Vợ/Chồng</option>
+                            <option>Con</option>
+                            <option>Cha/Mẹ</option>
+                            <option>Khác</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tình trạng Cư trú</label>
+                        <select class="form-select bh-input" id="bh_residence_status">
+                            <option value="Thường trú">Thường trú</option>
+                            <option value="Tạm trú">Tạm trú</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày đăng ký Thường trú</label>
+                        <input type="date" class="form-control bh-input" id="bh_reg_date">
+                    </div>
+                </div>
+
+                <div class="form-section-title">3. Thông tin Cha Mẹ</div>
+                <div class="row g-3">
+                     <div class="col-md-6">
+                        <label class="form-label">Họ tên Cha <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control bh-input" id="bh_father_name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mã định danh Cha</label>
+                        <input type="text" class="form-control bh-input" id="bh_father_id" maxlength="12">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Họ tên Mẹ <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control bh-input" id="bh_mother_name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mã định danh Mẹ</label>
+                        <input type="text" class="form-control bh-input" id="bh_mother_id" maxlength="12">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label">Ghi chú bổ sung (không bắt buộc)</label>
+              <textarea id="modal_note" class="form-control" rows="2" placeholder="Mô tả thêm..."></textarea>
+            </div>
+
+            <div id="modalAlert" class="d-none alert mt-3" role="alert"></div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+            <button id="sendRequestBtn" type="button" class="btn btn-primary">Gửi yêu cầu</button>
+          </div>
+        </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const userCCCD = localStorage.getItem('person_cccd');
+    const username = localStorage.getItem('username');
+    let currentUserData = null;
+
+    function goTo(p){ window.location.href=p; }
+    function logout(){ localStorage.clear(); window.location.href='../index.html'; }
+    function showLoading(show) { document.getElementById('loadingOverlay').classList.toggle('show', show); }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const min = String(d.getMinutes()).padStart(2,'0');
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    function statusBadge(status) {
+      const badges = {
+        'Đang xử lý': '<span class="badge bg-warning text-dark">Đang xử lý</span>',
+        'Đã duyệt': '<span class="badge bg-success">Đã duyệt</span>',
+        'Không xử lý': '<span class="badge bg-danger">Từ chối</span>'
+      };
+      return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+    }
+
+    // Load user info
+    async function loadUserInfo() {
+      try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/persons/${userCCCD}`);
+        if (!res.ok) throw new Error('Không thể tải thông tin');
+        currentUserData = await res.json();
+        fillReadOnly();
+      } catch (err) {
+        console.error(err);
+        alert('Không thể tải thông tin người dùng');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function fillReadOnly() {
+      if (!currentUserData) return;
+      document.getElementById('ro_name').textContent = currentUserData.name || '-';
+      document.getElementById('ro_dob').textContent = formatDate(currentUserData.ngaySinh);
+      document.getElementById('ro_gender').textContent = currentUserData.gioiTinh || '-';
+      document.getElementById('ro_cccd').textContent = currentUserData.cccd || '-';
+      document.getElementById('ro_address').textContent = currentUserData.diaChi || '-';
+    }
+
+    // Load history
+    async function loadHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/requests/my/${userCCCD}`);
+        if (!res.ok) throw new Error('Lỗi tải lịch sử');
+        const data = await res.json();
+        renderHistory(data);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('historyTbody').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Không thể tải lịch sử</td></tr>';
+      }
+    }
+
+    function renderHistory(data) {
+      const tbody = document.getElementById('historyTbody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có yêu cầu nào.</td></tr>';
+        return;
+      }
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="ps-3 font-monospace small">${r.request_code}</td>
+          <td>${formatDateTime(r.created_at)}</td>
+          <td>${r.title}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="pe-3 small text-muted">${r.admin_feedback || '—'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Modal
+    const modal = new bootstrap.Modal(document.getElementById('editInfoModal'));
+
+    document.getElementById('openCreateBtn').addEventListener('click', () => {
+      document.getElementById('modalForm').reset();
+      document.getElementById('modalAlert').classList.add('d-none');
+      document.getElementById('targetSelf').checked = true;
+      document.getElementById('selfUpdateForm').classList.remove('d-none');
+      document.getElementById('behalfDeclarationForm').classList.add('d-none');
+      document.querySelectorAll('.change-input').forEach(el => el.style.display = 'none');
+      fillReadOnly();
+      modal.show();
+    });
+
+    // Toggle forms
+    document.querySelectorAll('input[name="targetRadio"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isSelf = document.getElementById('targetSelf').checked;
+        document.getElementById('selfUpdateForm').classList.toggle('d-none', !isSelf);
+        document.getElementById('behalfDeclarationForm').classList.toggle('d-none', isSelf);
+      });
+    });
+
+    // Checkbox toggles
+    document.querySelectorAll('.change-checkbox').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const target = document.getElementById(chk.dataset.target);
+        target.style.display = chk.checked ? 'block' : 'none';
+        if (!chk.checked) target.value = '';
+      });
+    });
+
+    // Send request
+    document.getElementById('sendRequestBtn').addEventListener('click', async () => {
+      const alertBox = document.getElementById('modalAlert');
+      alertBox.classList.add('d-none');
+
+      const isSelf = document.getElementById('targetSelf').checked;
+      let requestData = {};
+
+      if (isSelf) {
+        // Điều chỉnh thông tin
+        const checked = Array.from(document.querySelectorAll('.change-checkbox')).filter(c => c.checked);
+        if (checked.length === 0) {
+          alertBox.textContent = 'Vui lòng chọn ít nhất 1 mục cần thay đổi.';
+          alertBox.className = 'alert alert-danger mt-3';
+          return;
+        }
+
+        const changes = {};
+        const changeLabels = [];
+        let invalid = false;
+
+        checked.forEach(chk => {
+          const input = document.getElementById(chk.dataset.target);
+          const val = input.value.trim();
+          if (!val) {
+            invalid = true;
+            input.classList.add('is-invalid');
+          } else {
+            input.classList.remove('is-invalid');
+            const field = chk.dataset.target.replace('input_', '');
+            if (field === 'name') changes.ho_ten = val;
+            if (field === 'gender') changes.gioi_tinh = val;
+            if (field === 'nationality') changes.quoc_tich = val;
+            if (field === 'religion') changes.ton_giao = val;
+            changeLabels.push(chk.nextElementSibling.textContent);
+          }
+        });
+
+        if (invalid) {
+          alertBox.textContent = 'Vui lòng nhập đầy đủ nội dung cho các mục đã chọn.';
+          alertBox.className = 'alert alert-danger mt-3';
+          return;
+        }
+
+        const note = document.getElementById('modal_note').value.trim();
+        requestData = {
+          person_cccd: userCCCD,
+          request_type: 'Điều chỉnh thông tin',
+          title: 'Cập nhật ' + changeLabels.join(', '),
+          content: Object.entries(changes).map(([k,v]) => `${k}: ${v}`).join(' | ') + (note ? ' | Ghi chú: ' + note : ''),
+          request_data: changes
+        };
+
+      } else {
+        // Khai hộ
+        const required = [
+          {id: 'bh_name', label: 'Họ tên'},
+          {id: 'bh_dob', label: 'Ngày sinh'},
+          {id: 'bh_gender', label: 'Giới tính'},
+          {id: 'bh_cccd', label: 'CCCD'},
+          {id: 'bh_address', label: 'Địa chỉ'},
+          {id: 'bh_relation', label: 'Quan hệ'},
+          {id: 'bh_father_name', label: 'Họ tên Cha'},
+          {id: 'bh_mother_name', label: 'Họ tên Mẹ'}
+        ];
+
+        let isValid = true;
+        required.forEach(field => {
+          const el = document.getElementById(field.id);
+          if (!el.value.trim()) {
+            el.classList.add('is-invalid');
+            isValid = false;
+          } else {
+            el.classList.remove('is-invalid');
+          }
+        });
+
+        if (!isValid) {
+          alertBox.textContent = 'Vui lòng nhập đầy đủ các trường bắt buộc (*).';
+          alertBox.className = 'alert alert-danger mt-3';
+          return;
+        }
+
+        const bhData = {
+          cccd: document.getElementById('bh_cccd').value.trim(),
+          ho_ten: document.getElementById('bh_name').value.trim(),
+          ngay_sinh: document.getElementById('bh_dob').value,
+          gioi_tinh: document.getElementById('bh_gender').value,
+          dan_toc: document.getElementById('bh_ethnicity').value.trim(),
+          ton_giao: document.getElementById('bh_religion').value.trim(),
+          quoc_tich: document.getElementById('bh_nationality').value.trim(),
+          dia_chi: document.getElementById('bh_address').value.trim(),
+          quan_he: document.getElementById('bh_relation').value,
+          tinh_trang_cu_tru: document.getElementById('bh_residence_status').value,
+          ngay_dang_ky: document.getElementById('bh_reg_date').value || null,
+          ten_cha: document.getElementById('bh_father_name').value.trim(),
+          cccd_cha: document.getElementById('bh_father_id').value.trim() || null,
+          ten_me: document.getElementById('bh_mother_name').value.trim(),
+          cccd_me: document.getElementById('bh_mother_id').value.trim() || null
+        };
+
+        const note = document.getElementById('modal_note').value.trim();
+        requestData = {
+          person_cccd: userCCCD,
+          request_type: 'Khai hộ',
+          title: `Khai hộ: ${bhData.ho_ten}`,
+          content: `Họ tên: ${bhData.ho_ten} | CCCD: ${bhData.cccd} | Quan hệ: ${bhData.quan_he}` + (note ? ' | Ghi chú: ' + note : ''),
+          request_data: bhData
+        };
+      }
+
+      // Send to API
+      try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestData)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          alertBox.textContent = result.error || 'Lỗi khi gửi yêu cầu';
+          alertBox.className = 'alert alert-danger mt-3';
+          return;
+        }
+
+        alertBox.textContent = 'Gửi yêu cầu thành công! Mã: ' + result.request_code;
+        alertBox.className = 'alert alert-success mt-3';
+
+        setTimeout(() => {
+          modal.hide();
+          loadHistory();
+        }, 1500);
+
+      } catch (err) {
+        console.error(err);
+        alertBox.textContent = 'Lỗi kết nối server';
+        alertBox.className = 'alert alert-danger mt-3';
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Remove invalid on input
+    document.querySelectorAll('.change-input, .bh-input').forEach(el => {
+      el.addEventListener('input', () => el.classList.remove('is-invalid'));
+    });
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!userCCCD) {
+        alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+        logout();
+        return;
+      }
+      document.getElementById('usernameDisplay').textContent = username || 'User';
+      await loadUserInfo();
+      await loadHistory();
+    });
+  </script>
+</body>
+</html>
